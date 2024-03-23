@@ -29,7 +29,6 @@ github_username:  jekyll
 
 # Build settings
 remote_theme: samarsault/plainwhite-jekyll
-theme: plainwhite
 plugins:
   - jekyll-feed
   - jekyll-email-protect
