@@ -58,7 +58,7 @@ plainwhite:
   sitemap: true
 
 show_excerpts: true
-
+excerpt_separator: <!--more-->
 include: favicon.ico
 
 logo: /assets/portfolio_no_background.png
