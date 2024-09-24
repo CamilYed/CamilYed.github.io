@@ -14,7 +14,13 @@ In this article, I’ll explore subdomains in detail and introduce a set of heur
 
 ## What is a Domain?
 
-In the context of Domain-Driven Design (DDD), a **domain** refers to the specific area of business that the software is intended to support. For a car-sharing company, the domain covers everything related to providing ride services, managing drivers, handling customers, and ensuring that the service runs smoothly. The car-sharing business is complex, involving various processes, stakeholders, and technologies.
+In the context of Domain-Driven Design (DDD), a **domain** refers to the specific area of business that the software is intended to support. For a car-sharing company, the domain covers everything related to providing ride services, managing drivers, handling customers, and ensuring that the service runs smoothly.
+<div style="float: right; margin: 0 0 10px 20px; max-width: 300px;">
+  <img src="/assets/car-sharing.png" alt="Car Sharing Illustration" style="width: 100%; height: auto;">
+</div>
+
+The car-sharing business is complex, involving various processes, stakeholders, and technologies.
+
 
 In a **car-sharing domain**, there are multiple areas of responsibility, such as:
 - Managing and certifying drivers,
@@ -24,3 +30,8 @@ In a **car-sharing domain**, there are multiple areas of responsibility, such as
 - Managing vehicle maintenance.
 
 The domain can be further divided into **subdomains** to handle specific aspects of the business, allowing for more manageable system architecture.
+
+
+## Heuristics for Identifying Subdomains
+
+TODO
