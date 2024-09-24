@@ -29,9 +29,58 @@ In a **car-sharing domain**, there are multiple areas of responsibility, such as
 - Processing payments for services,
 - Managing vehicle maintenance.
 
-The domain can be further divided into **subdomains** to handle specific aspects of the business, allowing for more manageable system architecture.
+The domain can be further divided into **subdomains** to handle specific aspects of the business, allowing for more 
+manageable system architecture.
 
 
 ## Heuristics for Identifying Subdomains
 
-TODO
+### 1. Conway’s Law (Organizational Structure Heuristic)
+
+<div style="float: right; margin: 0 0 10px 20px; max-width: 300px;">
+  <img src="/assets/conway-law.png" alt="Car Sharing Illustration" style="width: 100%; height: auto;">
+</div>
+
+Conway's Law suggests that the system structure reflects the communication structure of the organization. 
+In a car-sharing company, departments such as **Driver Onboarding**, **Customer Support**, and **Operations** 
+handle distinct areas of the business, which naturally map to different subdomains in the software.
+
+
+- **Example (Car-sharing)**: The **Driver Onboarding Team** is responsible for managing new drivers, checking their 
+documentation, and approving them to provide rides. The **Operations Team** ensures that the ride matching algorithm 
+runs smoothly, monitoring the real-time status of drivers and passengers. These two teams have different responsibilities 
+and goals, so the software architecture should reflect this by separating the **Driver Management** and **Ride Matching** 
+subdomains.
+
+### 2. Domain Experts (Expert Segmentation Heuristic)
+Domain experts within an organization specialize in different areas of the business. In a car-sharing company, the experts managing driver recruitment and certification will have different knowledge and goals than those responsible for optimizing real-time ride matching. This segmentation helps define the boundaries of subdomains.
+
+- **Example (Car-sharing)**: The **Driver Onboarding Team** includes experts who understand the legal and safety requirements for drivers. They work separately from the **Operations Team**, which focuses on ensuring that drivers are matched with riders as efficiently as possible. These two teams represent distinct subdomains: **Driver Management** and **Ride Operations**.
+
+### 3. Ubiquitous Language (Language Heuristic)
+Subdomains can be identified by analyzing how different terms are used across the organization. When the same term has different meanings for different teams, it’s a signal that those teams are working within separate subdomains.
+
+- **Example (Car-sharing)**: The term "driver" means different things to different teams. For the **Driver Onboarding Team**, a "driver" is someone in the process of being recruited, trained, and approved. For the **Operations Team**, a "driver" is someone actively providing rides. This difference in understanding suggests that these two areas should be treated as separate subdomains: **Driver Management** and **Ride Operations**.
+
+### 4. Business Value (Value-Based Heuristic)
+Prioritize subdomains based on their business value. Core domains that provide the most competitive advantage should be the highest priority, while supporting and generic domains can be given less focus.
+
+- **Example (Car-sharing)**: The **ride matching algorithm** is a high-value core domain, as it defines the car-sharing service’s competitive advantage. Ensuring that rides are quickly and efficiently matched to drivers is crucial. On the other hand, **Driver Management** is a supporting domain that, while necessary, doesn’t directly differentiate the service from competitors. **Payment Processing** is a generic domain that can be handled by a third-party service.
+
+### 5. Process Steps (Process Heuristic)
+Analyzing the key steps in a business process can help identify subdomains. In a car-sharing service, each major step in the process from booking a ride to completing payment could represent a different subdomain.
+
+- **Example (Car-sharing)**: The process of ordering a ride involves distinct steps: **ride request**, **driver assignment**, **ride completion**, and **payment processing**. Each of these steps can be modeled as separate subdomains, such as **Ride Operations** (for the actual ride process) and **Payment Processing** (for handling the transaction at the end).
+
+### 6. Change Coupling (Technical Heuristic)
+If changes to one part of the system frequently require changes in another, the system may be too tightly coupled. This heuristic helps identify areas where subdomains need to be separated to reduce change coupling.
+
+- **Example (Car-sharing)**: If modifying the **Ride Matching System** often requires changes to the **Payment System**, this is a sign that the two systems are too tightly coupled. These systems should be separated into distinct subdomains to allow for more flexibility in making changes.
+
+### 7. Bounded Contexts (Strategic Heuristic)
+Subdomains should align with bounded contexts, ensuring that each part of the system operates within its own well-defined boundaries and doesn’t leak into other areas.
+
+- **Example (Car-sharing)**: The **Ride Matching** context is responsible for handling the logic of matching drivers and passengers. The **Payment Processing** context, on the other hand, deals exclusively with handling transactions and ensuring that drivers are paid and passengers are charged correctly. These contexts should have clear boundaries and not overlap with each other.
+
+## Conclusion
+By using these heuristics, you can better discover and define subdomains in complex systems. Properly identifying these boundaries leads to more maintainable, flexible, and scalable architectures. Subdomains play a crucial role in ensuring that teams can work independently, and software components can evolve without unnecessary coupling.
