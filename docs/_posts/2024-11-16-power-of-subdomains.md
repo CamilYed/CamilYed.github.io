@@ -5,8 +5,6 @@ date: 2024-11-16
 tags: [ddd, subdomains]
 ---
 
-# Discover, Decompose, Decoupled – The Power of Subdomains in Domain-Driven Design (DDD)
-
 Domain-Driven Design (DDD) has become a powerful tool for modeling complex systems in a way that aligns with the business. One of the key concepts in DDD is the **subdomain**—a partitioning of the business logic that helps teams build maintainable and scalable systems. While many developers and architects understand the basics of domains and subdomains, there’s a lot of potential hidden behind these terms.
 
 In this article, I’ll explore subdomains in detail and introduce a set of heuristics that can guide the discovery of subdomains. Along the way, we’ll discuss how these heuristics can be used in real-world scenarios, and I’ll suggest visual tools that can aid in their application.
