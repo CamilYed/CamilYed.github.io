@@ -46,10 +46,8 @@ plainwhite:
   date_format: "%b %-d, %Y"
 
   social_links:
-    - title: GitHub
-      url: https://github.com/CamilYed
-    - title: LinkedIn
-      url: https://linkedin.com/in/jkamil
+    github: CamilYed
+    linkedIn: in/jkamil
 
   navigation:
     - title: Posts
