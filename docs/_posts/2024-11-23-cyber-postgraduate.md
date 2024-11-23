@@ -9,9 +9,11 @@ categories: [ cybersecurity, education, Warsaw University of Technology ]
   <img src="/assets/elka.jpeg" alt="WEIT" style="width: 100%; height: auto;">
 </div>
 This October, I embarked on a one-year postgraduate course in **Cybersecurity Engineering** at the Warsaw University of
-Technology. Interestingly, this was not my original plan. Two years ago, inspired by the growing prominence of *
-*Artificial Intelligence**, I considered pursuing a related program. AI was (and still is) an exciting field, with
+Technology. Interestingly, this was not my original plan. Two years ago, inspired by the growing prominence of 
+**Artificial Intelligence**, I considered pursuing a related program. AI was (and still is) an exciting field, with
 significant breakthroughs capturing headlines worldwide.
+<!--more-->
+
 
 ### A Change in Direction
 
