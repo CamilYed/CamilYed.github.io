@@ -2,7 +2,7 @@
 layout: post
 title: "Two Months Into My Cybersecurity Engineering Journey"
 date: 2024-11-23
-categories: [ cybersecurity, education, Warsaw University of Technology ]
+tags: [ cybersecurity, education, Warsaw University of Technology ]
 ---
 
 <div style="float: right; margin: 0 0 10px 20px; max-width: 600px;">
