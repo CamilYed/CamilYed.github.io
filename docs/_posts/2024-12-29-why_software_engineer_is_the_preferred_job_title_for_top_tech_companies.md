@@ -111,5 +111,5 @@ That said, more specialized titles like **Java Developer** or creative ones like
 place in specific contexts. However, they may not always capture the full scope of responsibilities and opportunities
 associated with modern software development roles.
 
-For companies looking to attract top-tier talent, I believe that choosing a clear and professional job title like *
-*Software Engineer** can be a thoughtful and effective approach.  
+For companies looking to attract top-tier talent, I believe that choosing a clear and professional job title like 
+**Software Engineer** can be a thoughtful and effective approach.  
