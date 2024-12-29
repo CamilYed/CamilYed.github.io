@@ -109,7 +109,9 @@ A recommended starting point is exploring resources like [*Architecture
 Modernization*](https://www.manning.com/books/architecture-modernization), which provides practical insights into
 transforming and modernizing software systems. This knowledge is increasingly critical as companies strive to adapt to
 rapidly changing technological landscapes and scale their operations effectively.
-
+<div style="text-align: center; margin: 20px 0;">
+  <img src="/assets/arch-modern.jpg" alt="Architecture Modernization" style="display: block; margin: 0 auto; width: 50%; height: auto;">
+</div>
 By developing skills in architecture modernization, software engineers can position themselves as strategic thinkers and
 problem-solvers, capable of contributing not just to code but also to the long-term vision and evolution of their
 organizations' software systems.
