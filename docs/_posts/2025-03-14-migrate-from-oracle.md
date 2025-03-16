@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "Why Migrate from Oracle to Open Source: A Technical and Strategic Perspective"
+title: "The True Cost of Vendor Lock-In: Why Open-Source Databases Make Sense"
 date: 2025-03-14
 tags: [ tech, recruiting, database, open-source, oracle, postgresql, migration, cost-analysis, scalability, software-engineering ]
 ---
