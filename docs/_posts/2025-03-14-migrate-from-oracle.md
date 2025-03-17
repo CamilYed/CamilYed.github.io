@@ -34,9 +34,9 @@ on [Oracle’s official price list](https://www.oracle.com/a/ocom/docs/corporate
 #### Real-World Cost Analysis: Large Financial Institution Use Case
 
 To better understand the cost implications of using Oracle versus PostgreSQL, let’s consider a real-world scenario: a
-large financial institution responsible for collecting and processing credit information from major banks in a country
-with a population of 40 million. Given the need for high availability (HA) and scalability, we estimate the
-infrastructure requirements and associated costs for running Oracle Database.
+large financial institution processing credit information from major banks in a country. Given the need for high
+availability (HA) and scalability, we estimate the infrastructure requirements and associated costs for running Oracle
+Database.
 
 #### Infrastructure Requirements
 
