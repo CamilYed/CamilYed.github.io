@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "Benchmarking Hashcat v7.0 on Apple M3: Python Automation + Argon2, ZIP, and MD5 Performance"
+title: "First Look: Benchmarking Hashcat v7.0 on Apple M3 Pro"
 date: 2025-08-02
 tags: [ hashcat, cybersecurity, benchmarking, m3, apple-silicon, password-cracking, automation, python ]
 ---
