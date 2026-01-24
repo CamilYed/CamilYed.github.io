@@ -1,8 +1,11 @@
 ---
 layout: post
-title: "A Silent Struggle: Living with Schizophrenia"
-date: 2024-11-22
-tags: [reflection, hope, family]
+title: "My Journey with Miodowa: Lessons in Compassion and Community"
+lang: en
+ref: miodowa-journey
+date: 2024-11-21
+tags: [volunteering, community, compassion, charity, Miodowa, faith, life-lessons]
+permalink: /en/miodowa-journey/
 ---
 
 Schizophrenia is a deeply challenging and often misunderstood illness. My brother, once a thriving athlete with incredible determination and the ability to achieve any goal he set, was diagnosed with schizophrenia a few years ago. It has been a heartbreaking journey to watch how this illness has impacted his life, his dreams, and the rhythm of our family.

@@ -1,8 +1,11 @@
 ---
 layout: post
-title: "Breaking Down Silos: Socio-Technical Alignment in a Financial Institution"
-date: 2024-11-29
-tags: [ socio-technical-alignment, testcontainers, team-topologies ]
+title: "Shortening the Feedback Loop with TestContainers – A Strategic Advantage"
+lang: en
+ref: testcontainers-feedback-loop
+date: 2024-11-28
+tags: [development, testing]
+permalink: /en/testcontainers-feedback-loop/
 ---
 
 Modernizing software architecture in a financial institution often feels like an uphill battle. Strict security

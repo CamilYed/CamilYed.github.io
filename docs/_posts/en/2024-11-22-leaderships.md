@@ -1,8 +1,11 @@
 ---
 layout: post
 title: "Is the Leader Always Part of the Team? A Lesson From My Experience"
+lang: en
+ref: leadership-team-dynamics
 date: 2024-11-22
-tags: [ leadership, team-dynamics, lessons-learned ]
+tags: [leadership, team-dynamics, lessons-learned]
+permalink: /en/leadership-team-dynamics/
 ---
 
 When I was part of one of the largest eCommerce companies in Europe, I observed something that still makes me reflect

@@ -1,8 +1,11 @@
 ---
 layout: post
 title: "Software Engineer vs. Programmer"
+lang: en
+ref: software-engineer-vs-programmer
 date: 2024-12-29
 tags: [ tech, recruiting ]
+permalink: /en/software-engineer-vs-programmer/
 ---
 
 A **Software Engineer** is a professional responsible for designing, building, testing, and maintaining software

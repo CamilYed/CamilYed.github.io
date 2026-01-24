@@ -1,0 +1,14 @@
+{% assign translations = site.posts | where: "ref", page.ref %}
+
+{% if translations.size > 1 %}
+<div class="language-switch">
+    <span class="lang-label">READ IN:</span>
+    {% assign sorted_translations = translations | sort: "lang" %}
+    {% for t in sorted_translations %}
+    <a href="{{ t.url | relative_url }}"
+       class="lang-link {% if t.lang == page.lang %}active{% endif %}">
+        {{ t.lang | upcase }}
+    </a>
+    {% endfor %}
+</div>
+{% endif %}

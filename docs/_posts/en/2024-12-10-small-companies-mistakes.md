@@ -1,8 +1,11 @@
 ---
 layout: post
 title: "Common Mistakes Small Companies Make"
+lang: en
+ref: small-companies-mistakes
 date: 2024-12-10
 tags: [ business, technology, startups ]
+permalink: /en/small-companies-mistakes/
 ---
 
 In the world of small tech companies, where every minute counts in the race for market relevance, it’s easy to lose

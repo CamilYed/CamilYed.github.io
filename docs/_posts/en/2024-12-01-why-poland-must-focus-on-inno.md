@@ -1,8 +1,11 @@
 ---
 layout: post
 title: "Why Poland Must Invest in STEM, Technology, and Industrial Development"
-date: 2024-12-02
-tags: [geopolitics technology, defense, economy, strategy]
+lang: en
+ref: poland-stem-investment
+date: 2024-12-01
+tags: [geopolitics, technology, defense, economy, strategy]
+permalink: /en/poland-stem-investment/
 ---
 
 Poland stands at a pivotal moment in its economic and political development. The strategic decisions made today will

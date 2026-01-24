@@ -50,16 +50,18 @@ plainwhite:
     linkedIn: in/jkamil
 
   navigation:
-    - title: Posts
-      url: "/"
+    - title: PL
+      url: "/pl/"
+    - title: EN
+      url: "/en/"
     - title: Whoami
       url: "/whoami"
-
   sitemap: true
 
 show_excerpts: true
 excerpt_separator: <!--more-->
-include: favicon.ico
+include:
+  - favicon.ico
 
 logo: /assets/portfolio_no_background.png
 

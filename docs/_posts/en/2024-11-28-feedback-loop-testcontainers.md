@@ -1,8 +1,11 @@
 ---
 layout: post
 title: "Shortening the Feedback Loop with TestContainers – A Strategic Advantage"
+lang: en
+ref: testcontainers-feedback-loop
 date: 2024-11-28
-tags: [ development, testing ]
+tags: [development, testing]
+permalink: /en/testcontainers-feedback-loop/
 ---
 
 In today’s fast-paced software development landscape, organizations are constantly seeking ways to streamline processes,

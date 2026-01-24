@@ -1,8 +1,11 @@
 ---
 layout: post
 title: "First Look: Benchmarking Hashcat v7.0 on Apple M3 Pro"
+lang: en
+ref: hashcat-m3-benchmarks
 date: 2025-08-02
-tags: [ hashcat, cybersecurity, benchmarking, m3, apple-silicon, password-cracking, automation, python ]
+tags: [ hashcat, cybersecurity, benchmarking, m3, apple-silicon ]
+permalink: /en/hashcat-m3-benchmarks/
 ---
 
 With the recent release of [Hashcat v7.0.0](https://hashcat.net/hashcat/), including 58 new algorithms and support for the Assimilation Bridge and Python Bridge, it's time to explore how it performs on Apple's new M3 hardware.

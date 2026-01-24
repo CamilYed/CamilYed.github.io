@@ -6,7 +6,7 @@
 <title>{{ page.title }}</title>
 {% feed_meta %}
 {% seo title=false %}
-<!-- Twitter cards -->
+
 <meta name="twitter:site"    content="@{{ site.plainwhite.social_links.twitter }}">
 <meta name="twitter:creator" content="@{{ page.author }}">
 <meta name="twitter:title"   content="{{ page.title }}">
@@ -22,4 +22,64 @@
 <meta name="twitter:card"  content="summary">
 <meta name="twitter:image" content="{{ site.url }}{{ site.logo }}">
 {% endif %}
-<!-- end of Twitter cards -->
+<style>
+    /* Przełącznik języków W ARTYKULE */
+    .language-switch {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin: 15px 0;
+      font-family: "Raleway", sans-serif;
+    }
+    .lang-label {
+      font-size: 0.7rem;
+      font-weight: 700;
+      color: #999;
+      letter-spacing: 1px;
+    }
+    .lang-link {
+      text-decoration: none;
+      font-size: 0.75rem;
+      color: #333;
+      border: 1px solid #eee;
+      padding: 2px 8px;
+      border-radius: 3px;
+      transition: 0.2s;
+    }
+    .lang-link:hover {
+      background: #f5f5f5;
+    }
+    .lang-link.active {
+      background: #333;
+      color: #fff;
+      border-color: #333;
+      pointer-events: none;
+    }
+
+    /* Naprawa menu bocznego - usuwamy kropki i robimy linię */
+    nav.navigation ul {
+      list-style-type: none !important;
+      padding: 0 !important;
+      margin: 15px 0 !important;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 15px;
+    }
+    nav.navigation ul li {
+      display: inline-block !important;
+      margin: 0 !important;
+      padding: 0 !important;
+    }
+    nav.navigation ul li:before {
+      content: none !important; /* Usuwa kropki w niektórych motywach */
+    }
+    .post-categories li {
+    display: inline-block;
+    background: #f0f0f0;
+    padding: 2px 8px;
+    border-radius: 4px;
+    margin-right: 5px;
+    font-size: 0.8rem;
+}
+</style>

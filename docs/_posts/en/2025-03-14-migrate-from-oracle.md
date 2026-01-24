@@ -1,8 +1,11 @@
 ---
 layout: post
 title: "The True Cost of Vendor Lock-In: Why Open-Source Databases Make Sense"
+lang: en
+ref: migrate-oracle-to-postgres
 date: 2025-03-14
-tags: [ tech, recruiting, database, open-source, oracle, postgresql, migration, cost-analysis, scalability, software-engineering ]
+tags: [ tech, database, open-source, oracle, postgresql ]
+permalink: /en/migrate-oracle-to-postgres/
 ---
 
 Many organizations are moving away from Oracle to adopt open-source solutions like PostgreSQL. This article explores why
