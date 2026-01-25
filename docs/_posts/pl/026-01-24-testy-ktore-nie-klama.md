@@ -12,7 +12,7 @@ W tym artykule chcę się podzielić jak podchodzę do pisania testów, które n
 code-coverage, ale dają mi pewność, że po wdrożeniu nowej funkcjonalności - działa ona zgodnie z pierwotnymi
 założeniami.
 
-## Czytelność i Sygnał (Ekspresja)
+## Czytelność
 
 Zacznijmy od podstaw. Jeśli test nie komunikuje jasno, co jest testowane i dlaczego padł, to cała reszta technologii
 staje się niepotrzebnym ciężarem. Wiele razy przeglądając kod dostarczonych testów podczas procesu code review, muszę
@@ -128,5 +128,138 @@ void shouldDeactivateAdminUserAndLogEvent() {
 Mimo że powyższy kod wygląda znacznie lepiej niż "ściana tekstu", to wciąż mamy tu sporo szumu technicznego (ręczne
 ustawianie pól, settery, techniczne asercje jedna po drugiej).
 
-W kolejnych sekcjach zobaczymy, jak za pomocą wzorców takich jak Test Data Builder oraz Custom Assertions (zgodnie z
-duchem Nat Pryce), możemy sprawić, że ten sam test będzie wyglądał niemal jak zdania w języku naturalnym.
+W kolejnych sekcjach zobaczymy, jak za pomocą wzorców takich jak Test Data Builder oraz Custom Assertions, możemy
+sprawić, że ten sam test będzie wyglądał niemal jak zdania w języku naturalnym.
+
+### 2. Test Data Builder
+
+Wróćmy do naszego „smutnego kodzika” z sekcji wyżej. Dlaczego on tak naprawdę kuje w oczy? Bo za każdym razem, gdy
+chcemy stworzyć użytkownika, musimy wywołać konstruktor ze wszystkimi polami albo zestaw setterów. To tworzy ogromny
+szum informacyjny. Nie wszystkie przecież dane ustawione w konstruktorze mogą wpływać na wynik asercji, co więcej, jeśli
+konstruktor zostałby np. rozszerzony o kolejny argument, nasze testy wymagałyby zmian, w każdym miejscu, gdzie ten
+konstruktor wywołujemy, mamy wtedy do czynienia z pojęciem `fragile tests`.
+
+Rozwiązaniem na tę sytuację jest wzorzec **Test Data Builder** opisany
+przez [Nat Pryce'a](http://www.natpryce.com/articles/000714.html). Ideą jest stworzenie klasy pomocniczej, która posiada
+sensowne, domyślne wartości dla wszystkich pól. W samym teście nadpisujemy tylko te parametry, które są kluczowe dla
+danego scenariusza.
+
+Zanim przejdziemy do implementacji Buildera, zobaczmy, jak wygląda sekcja `// given` w momencie, gdy nasza domena staje
+się bogatsza. Załóżmy, że aby zapisać użytkownika w bazie, musimy spełnić szereg wymagań technicznych: adres, dane
+kontaktowe, daty, uprawnienia.
+
+W teście deaktywacji te dane to tylko tło, ale w kodzie zajmują pierwszy plan:
+
+☹️ **Smutny kodzik:**
+
+```java
+
+@Test
+void shouldDeactivateAdminUserAndLogEvent() {
+    // given
+    var address = new Address("Warszawa", "Złota 44", "00-123", "Polska");
+    var user = new User("Jan", "Kowalski", "jan.k@example.com", "Active");
+    user.setAddress(address);
+    user.setRole("ADMIN");
+    user.setCreatedAt(LocalDateTime.now());
+    user.setLastLogin(LocalDateTime.now().minusDays(1));
+    repository.save(user);
+
+    // and - przygotowanie logów technicznych, które muszą być w systemie
+    var initialLog = new AuditLog("INITIAL_CREATION", user.getId(), LocalDateTime.now(), "SYSTEM");
+    auditRepository.save(initialLog);
+
+    // when
+    user.deactivate("User requested");
+    service.update(user);
+
+    // then - sprawdzamy tylko pole status
+    var updated = repository.findById(user.getId());
+    assertThat(updated.getStatus()).isEqualTo("Inactive");
+}
+```
+
+Mamy tutaj aż 8 linii kodu tylko po to, żeby przygotować obiekt do testu. Czy którykolwiek z tych parametrów ma wpływ na
+to, czy administrator zostanie poprawnie zdeaktywowany? Oczywiście, że nie. Skoro te techniczne detale są nieistotne z
+punktu widzenia logiki biznesowej deaktywacji, powinny zostać ukryte.
+
+Właśnie tutaj z pomocą przychodzi Test Data Builder. Pozwala on na zdefiniowanie sensownych, domyślnych wartości dla
+wszystkich wymaganych pól w jednym miejscu. Co więcej, możemy pójść krok dalej i zastosować kompozycję builderów. Jeśli
+nasz User posiada Address, a adres nas w danym teście nie interesuje – builder użytkownika po prostu użyje domyślnego
+buildera adresu.
+
+Spójrzmy na implementację:
+
+```java
+public class UserBuilder {
+    private String name = "Jan";
+    private String lastName = "Kowalski";
+    private String status = "Active";
+    private String role = "USER";
+    private String deactivationReason = null;
+    private AddressBuilder addressBuilder = AddressBuilder.anAddress();
+
+    private UserBuilder() {}
+
+    public static UserBuilder aUser() {
+        return new UserBuilder();
+    }
+
+    public UserBuilder withRole(String role) {
+        this.role = role;
+        return this;
+    }
+
+    public UserBuilder withStatus(String status) {
+        this.status = status;
+        return this;
+    }
+
+    public UserBuilder withAddress(AddressBuilder addressBuilder) {
+        this.addressBuilder = addressBuilder;
+        return this;
+    }
+
+    public User build() {
+        User user = new User(name, lastName, status, role);
+        user.setAddress(addressBuilder.build());
+        user.setDeactivationReason(deactivationReason);
+        return user;
+    }
+}
+
+public class AddressBuilder {
+    private String city = "Warszawa";
+    private String street = "Złota 44";
+
+    public static AddressBuilder anAddress() {
+        return new AddressBuilder();
+    }
+
+    public AddressBuilder withCity(String city) {
+        this.city = city;
+        return this;
+    }
+
+    public Address build() {
+        return new Address(city, street);
+    }
+}
+```
+Co zyskujemy:
+
+```java
+@Test
+void shouldDeactivateAdminUserAndLogEvent() {
+    // given
+    var user = aUser()
+            .withRole("ADMIN")
+            .build();
+    
+}
+```
+
+Jak widać, ukryliśmy cały nieistotny szum informacyjny w sekcji given, gdzie skupiamy się jedynie na roli użytkownika, to
+ona ma znaczenie w tym teście.
+
+### 3. Asercje
