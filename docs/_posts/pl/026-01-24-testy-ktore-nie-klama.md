@@ -199,7 +199,8 @@ public class UserBuilder {
     private String deactivationReason = null;
     private AddressBuilder addressBuilder = AddressBuilder.anAddress();
 
-    private UserBuilder() {}
+    private UserBuilder() {
+    }
 
     public static UserBuilder aUser() {
         return new UserBuilder();
@@ -246,20 +247,107 @@ public class AddressBuilder {
     }
 }
 ```
+
 Co zyskujemy:
 
+🙂
+
 ```java
+
 @Test
 void shouldDeactivateAdminUserAndLogEvent() {
     // given
     var user = aUser()
             .withRole("ADMIN")
             .build();
-    
+
 }
 ```
 
-Jak widać, ukryliśmy cały nieistotny szum informacyjny w sekcji given, gdzie skupiamy się jedynie na roli użytkownika, to
-ona ma znaczenie w tym teście.
+Jak widać, ukryliśmy cały nieistotny szum informacyjny w sekcji given, gdzie skupiamy się jedynie na roli użytkownika,
+to ona ma znaczenie w tym teście.
 
-### 3. Asercje
+### 3. Asercje-najczęstsze błędy
+
+Mając już idealnie przygotowane dane wejściowe, musimy zadbać o to, by wynik testu faktycznie o czymś nas informował.
+Istnieją dwie popularne praktyki, które dają złudne poczucie bezpieczeństwa.
+
+#### 3.1 Współdzielone zmienne
+
+Bardzo często kusi nas, aby raz zdefiniowaną wartość (np. imię użytkownika) wykorzystać zarówno w sekcji `// given` jak
+i
+w `// then`. To błąd. Jeśli przez pomyłkę zmienisz wartość zmiennej na początku testu, asercja na końcu nadal będzie
+"zielona", mimo że system może zachować się błędnie.
+
+☹️ **Smutny kodzik:**
+
+```java
+var expectedName = "Jan"; // Jeśli tu zmienisz na "Anna"...
+var user = aUser().withName(expectedName).build();
+
+// dalszy kod testu ...
+
+assertThat(result.getName()).
+
+isEqualTo(expectedName); // ...test nadal przejdzie!
+```
+
+Aby uodpornić powyższy kod na możliwe wystąpienie takiej sytuacji, wystarczy użyć literałów tekstowych.
+
+🙂
+
+```java
+var user = aUser().withName("Jan").build();
+
+// dalszy kod testu ...
+
+assertThat(result.getName()).
+
+isEqualTo("Jan");
+```
+
+#### 3.2 Klasy DTO w asercjach
+
+W przypadku testów API często można spotkać się z taką praktyką, gdzie w teście odpowiedź z danego endpointu jest
+mapowana na klasę DTO odpowiadającej reprezentacji w JSON.
+
+☹️ **Smutny kodzik:**
+
+```java
+
+@Test
+void shouldGetUserDetails() {
+    // when
+    ResponseEntity<UserResponse> response = restTemplate.getForEntity("/users/1", UserResponse.class);
+
+    // then
+    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+    assertThat(response.getBody().getFullName()).isEqualTo("Jan Kowalski");
+}
+```
+
+Czemu to jest niezalecana praktyka? Jeśli zmienisz nazwę pola w klasie `UserResponse` np. z `fullName` na `name`, IDE
+za pomocą refaktoryzacji automatycznie zaktualizuje tę nazwę również w teście. Wynik jest taki, że test nadal
+przechodzi,
+ale kontrakt endpointu jest już złamany. Jest to częsty przykład testów `False Positive`.
+
+W testach integracyjnych warto sprawdzać surową odpowiedź (np. jako String lub mapę) lub użyć biblioteki JsonPath, która
+zagląda bezpośrednio w strukturę JSON-a.
+
+🙂
+
+```java
+
+@Test
+void shouldGetUserDetailsAndValidateContract() {
+    // pominięty kod, setup testu ustawienie użytkownika w bazie ...
+
+    // when
+    ResponseEntity<String> response = restTemplate.getForEntity("/users/1", String.class);
+
+    // then
+    assertThat(JsonPath.read(response.getBody(), "$.fullName")).isEqualTo("Jan Kowalski");
+}
+```
+
+### 4. Custom Assertion
