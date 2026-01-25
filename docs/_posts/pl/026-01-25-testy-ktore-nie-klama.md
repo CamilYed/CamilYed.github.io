@@ -3,7 +3,7 @@ layout: post
 title: "Czego nauczyłem się po latach na temat testów? Moje subiektywne Best Practices cz. 1"
 lang: pl
 ref: modern-testing-practices
-date: 2026-01-24
+date: 2026-01-25
 tags: [ java, testing, spring-boot, clean-code ]
 permalink: /pl/testy-ktore-nie-klama/
 ---
@@ -16,14 +16,15 @@ założeniami.
 
 Zacznijmy od podstaw. Jeśli test nie komunikuje jasno, co jest testowane i dlaczego padł, to cała reszta technologii
 staje się niepotrzebnym ciężarem. Wiele razy przeglądając kod dostarczonych testów podczas procesu code review, muszę
-naprawdę postarać się co one faktycznie testują nie ufająć nad zbyt samemu opisowi testu.
+naprawdę postarać się zrozumieć, co one faktycznie testują, nie ufając nad zbyt samemu opisowi testu.
 
 <!--more-->
 
 ### 1. Struktura Given-When-Then
 
-Spójrzmy na pierwszy przykład, który nie jest w cale rozbudowany ale już sprawia, że trzeba nie co bardziej się wysilić
-aby wyłuskać co jest na wejściu testu - input, co testujemy - zachowanie, oraz co na końcu sprawdzamy - asercja.
+Spójrzmy na pierwszy przykład, który nie jest wcale rozbudowany, ale już na wstępie sprawia, że trzeba nie co bardziej
+się wysilić, aby wyłuskać to, co jest na wejściu testu — input, co testujemy — zachowanie, oraz co na końcu sprawdzamy —
+asercja.
 
 ☹️ **Smutny kodzik:**
 
@@ -40,9 +41,8 @@ void updateTest() {
 }
 ```
 
-Proste separatory kodu po przez np. komentarze - sprawiają, że już przy pierwszym spojrzeniu na test jest nam łatwiej
-się
-połapać gdzie tworzymy setup wejściowy - `// given `, co testujemy `// when`, oraz co weryfikujemy `// then`.
+Proste separatory kodu poprzez np. komentarze — sprawiają, że już przy pierwszym spojrzeniu na test, jest nam łatwiej
+się połapać, gdzie tworzymy setup wejściowy - `// given `, co testujemy `// when`, oraz co weryfikujemy `// then`.
 
 🙂
 
@@ -181,12 +181,12 @@ void shouldDeactivateAdminUserAndLogEvent() {
 ```
 
 Mamy tutaj aż 8 linii kodu tylko po to, żeby przygotować obiekt do testu. Czy którykolwiek z tych parametrów ma wpływ na
-to, czy administrator zostanie poprawnie zdeaktywowany? Oczywiście, że nie. Skoro te techniczne detale są nieistotne z
+to, czy administrator zostanie poprawnie zdezaktywowany? Oczywiście, że nie. Skoro te techniczne detale są nieistotne z
 punktu widzenia logiki biznesowej deaktywacji, powinny zostać ukryte.
 
-Właśnie tutaj z pomocą przychodzi Test Data Builder. Pozwala on na zdefiniowanie sensownych, domyślnych wartości dla
+Właśnie tutaj z pomocą przychodzi `Test Data Builder`. Pozwala on na zdefiniowanie sensownych, domyślnych wartości dla
 wszystkich wymaganych pól w jednym miejscu. Co więcej, możemy pójść krok dalej i zastosować kompozycję builderów. Jeśli
-nasz User posiada Address, a adres nas w danym teście nie interesuje – builder użytkownika po prostu użyje domyślnego
+nasz `User` posiada `Address`, a adres nas w danym teście nie interesuje – builder użytkownika po prostu użyje domyślnego
 buildera adresu.
 
 Spójrzmy na implementację:
@@ -261,7 +261,8 @@ void shouldDeactivateAdminUserAndLogEvent() {
     var user = aUser()
             .withRole("ADMIN")
             .build();
-
+    
+   // reszta kodu...
 }
 ```
 
@@ -277,8 +278,7 @@ Istnieją dwie popularne praktyki, które dają złudne poczucie bezpieczeństwa
 #### 3.1 Współdzielone zmienne
 
 Bardzo często kusi nas, aby raz zdefiniowaną wartość (np. imię użytkownika) wykorzystać zarówno w sekcji `// given` jak
-i
-w `// then`. To błąd. Jeśli przez pomyłkę zmienisz wartość zmiennej na początku testu, asercja na końcu nadal będzie
+i w `// then`. To błąd. Jeśli przez pomyłkę zmienisz wartość zmiennej na początku testu, asercja na końcu nadal będzie
 "zielona", mimo że system może zachować się błędnie.
 
 ☹️ **Smutny kodzik:**
@@ -330,8 +330,7 @@ void shouldGetUserDetails() {
 
 Czemu to jest niezalecana praktyka? Jeśli zmienisz nazwę pola w klasie `UserResponse` np. z `fullName` na `name`, IDE
 za pomocą refaktoryzacji automatycznie zaktualizuje tę nazwę również w teście. Wynik jest taki, że test nadal
-przechodzi,
-ale kontrakt endpointu jest już złamany. Jest to częsty przykład testów `False Positive`.
+przechodzi, ale kontrakt endpointu jest już złamany. Jest to częsty przykład testów `False Positive`.
 
 W testach integracyjnych warto sprawdzać surową odpowiedź (np. jako String lub mapę) lub użyć biblioteki JsonPath, która
 zagląda bezpośrednio w strukturę JSON-a.
@@ -390,7 +389,7 @@ Czemu takie podejście uważam, za złe?
 
 1. Pętla w teście: Jeśli masz for lub if w teście, to de facto piszesz algorytm. A algorytmy bywają błędne. Czy teraz
    potrzebujemy testu do testu?
-2. Niskopoziomowe detale: Czytając to, musisz analizować jak działa for, jak porównujemy Stringi i czy assertNotNull
+2. Niskopoziomowe detale: Czytając to, musisz, analizować jak działa `for`, jak porównujemy Stringi i czy `assertNotNull`
    jest w dobrym miejscu. Intencja biznesowa ("użytkownik został zdeaktywowany i odnotowano to w audycie") ginie w
    gąszczu technicznych instrukcji.
 3. Efekt domina: Jeśli zmieni się struktura loga, musisz poprawić te 15 linii kodu w każdym teście, który go sprawdza.
@@ -437,13 +436,13 @@ Czy możemy pójść jeszcze dalej i spróbować doprowadzić do tego, aby test 
 które powinny być agnostyczne wobec zastosowanych technologii, bo co interesuje biznes, że dane użytkownika trzymamy
 w Mongo zamiast bazie relacyjnej? Po drugie, nowe osoby dołączające do projektu mogą łatwiej przyswoić sobie wiedzę
 domenową, możemy wspiąć się na poziom, gdzie testy nie tylko dostarczają nam potwierdzenia, że nasz system działa wedle
-określonych zasad i reguł, ale stanowią jego żywą dokumentację biznesową, ponieważ prawda leży w kodzie, a nie w wymaganiach
-spisanych np. na `Confluence`.
+określonych zasad i reguł, ale stanowią jego żywą dokumentację biznesową, ponieważ prawda leży w kodzie, a nie w
+wymaganiach spisanych np. na `Confluence`.
 
 #### 5.1 Interfejs z domyślną implementacją jako podstawowy building block
 
 Zamiast wołać repozytorium, test "ma zdolność" zarządzania użytkownikami. Wykorzystamy do tego Interfejsy-Zdolności (
-Abilities). Pozwalają one "wstrzykiwać" zachowania do testu bez zaśmiecania go adnotacjami @Autowired czy technicznym
+`Abilities`). Pozwalają one "wstrzykiwać" zachowania do testu bez zaśmiecania go adnotacjami @`Autowired` czy technicznym
 kodem infrastruktury.
 
 ```java
@@ -497,7 +496,7 @@ class UserDeactivationTest implements UserAbility, AuditAbility {
 }
 ```
 
-Przykład jak można łatwo w Springu wyciągać beany w testach na potrzeby np. interfejsów `Ability`
+A o to, jak można łatwo w Springu wyciągać beany w testach na potrzeby np. interfejsów `Ability`
 
 ```java
 @Component
@@ -522,19 +521,19 @@ Powyższy test nie jest już kodem, który zrozumie tylko programista, a czyteln
 ten poziom abstrakcji niesie ze sobą konkretne korzyści architektoniczne:
 
 - Agnostycyzm technologiczny: Jeśli za rok zapadnie decyzja o zmianie bazy danych z relacyjnej na dokumentową, sam
-scenariusz testowy pozostanie nietknięty. Zmienisz jedynie implementację wewnątrz UserAbility, a logika biznesowa testu
-nadal będzie poprawnie weryfikować system.
+  scenariusz testowy pozostanie nietknięty. Zmienisz jedynie implementację wewnątrz `UserAbility`, a logika biznesowa
+  testu nadal będzie poprawnie weryfikować system.
 
-- Ochrona przed nieaktualną dokumentacją: Dokumentacja na Confluence czy w Jirze starzeje się w sekundę po zamknięciu zadania.
-Test napisany w ten sposób to `Executable Specification` – specyfikacja, która nie może kłamać, bo jeśli przestanie być
-aktualna, system po prostu nie przejdzie procesu `CI/CD`.
+- Ochrona przed nieaktualną dokumentacją: Dokumentacja na Confluence czy w Jirze starzeje się w sekundę po zamknięciu
+  zadania. Test napisany w ten sposób to `Executable Specification` – specyfikacja, która nie może kłamać, bo jeśli przestanie
+  być aktualna, system po prostu nie przejdzie procesu `CI/CD`.
 
 - Szybszy Onboarding: Nowy programista w zespole nie musi analizować, jakie repozytoria i serwisy są potrzebne, by
-przygotować stan bazy. Korzysta z gotowych "zdolności" (`Abilities`), dzięki czemu uczy się procesów biznesowych, a nie
-skupia na technologicznym szumie informacji.
+  przygotować stan bazy. Korzysta z gotowych "zdolności" (`Abilities`), dzięki czemu uczy się procesów biznesowych, a
+  nie skupia na technologicznym szumie informacji.
 
-- Wspólny język (Ubiquitous Language): Kod testu zaczyna brzmieć tak, jak rozmowa z Product Ownerem. "There is an
-admin", "User is deactivated" – to terminy, które rozumie każdy, nie tylko deweloperzy.
+- Wspólny język (`Ubiquitous Language`): Kod testu zaczyna brzmieć tak, jak rozmowa z `Product Ownerem`. "There is an
+  admin", "User is deactivated" – to terminy, które rozumie każdy, nie tylko deweloperzy.
 
 ---
 ### Podsumowanie (Część 1)
@@ -554,13 +553,13 @@ Pamiętaj: jeśli test trudno się czyta, nikt nie będzie go utrzymywał. **A m
 ### Co dalej
 
 Czytelność to dopiero połowa sukcesu. Nawet najładniejszy test będzie bezużyteczny, jeśli co drugi build na pipeline
-będzie na czerwono bez wyraźnego powodu (`flaky tests`), będzie działał wolno albo zacznie nas oszukiwać przez to, że wszystko
-dookoła zamockowaliśmy z użyciem np. Mockito, a jego debugowanie nie przynosi rozwiązania.
+będzie na czerwono bez wyraźnego powodu (`flaky tests`), będzie działał wolno albo zacznie nas oszukiwać przez to, że
+wszystko dookoła zamockowaliśmy z użyciem np. Mockito, a jego debugowanie nie przynosi rozwiązania.
 
 W kolejnej części porozmawiamy o:
 
 - **Dlaczego unikam Mockito i testuję "Black Box"**: Wolę testować prawdziwe implementacje (często z wersjami In-Memory
-  dla unitów) zamiast pisać testy, które weryfikują tylko to, czy wywołaliśmy mocka.
+  dla unitów), zamiast pisać testy, które weryfikują tylko to, czy wywołaliśmy mocka.
 
 - **Cisi zabójcy wydajności:** Czyli dlaczego adnotacje `@DirtiesContext` i `@SpyBean `to zło, które sprawia, że Spring
   przeładowuje kontekst w kółko i build nagle się wydłuża.
@@ -568,10 +567,10 @@ W kolejnej części porozmawiamy o:
 - **Panowanie nad czasem:** Jak przestać walczyć z `LocalDateTime.now()` i zacząć używać własnego `Clock Providera`, żeby
   testy dat były przewidywalne.
 
-- **Asynchroniczność:** Jak wyrzucić `Thread.sleep()` i zastąpić go przez `Awaitility`, żeby test nie czekał ani sekundy
-  za długo.
+- **Asynchroniczność:** Jak pozbyć się `Thread.sleep()` i zastąpić go przez `Awaitility`, żeby test nie czekał ani
+  sekundy za długo i był bardziej kuloodporny na kwestię upływu czasu.
 
-- **Izolacja i brak stanu**: Dlaczego używam Database Cleanera zamiast adnotacji `@Transactional` na klasach testowych.
+- **Izolacja i brak stanu**: Dlaczego używam `Database Cleanera` zamiast adnotacji `@Transactional` na klasach testowych.
 
 - **Infrastruktura**: Krótki wstęp do Testcontainers i Wiremock, czyli jak testować z prawdziwą bazą i API bez udawania,
   że "u mnie na H2 działa".
