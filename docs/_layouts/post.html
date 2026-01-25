@@ -3,37 +3,58 @@ layout: default
 ---
 {%- assign date_format = site.plainwhite.date_format | default: "%b %-d, %Y" -%}
 <div class="post-container">
-  <a class="post-link" href="{{ page.url | relative_url }}">
-    <h2 class="post-title">{{ page.title | escape }}</h2>
-  </a>
-  <div class="post-meta">
-    <ul class="post-categories">
-      {%- for tag in page.tags -%}
-      <li>{{ tag }}</li>
-      {%- endfor -%}
-    </ul>
-    <div class="post-date"><i class="icon-calendar"></i>{{ page.date | date: date_format }}</div>
-  </div>
-  <div class="post">
-      {% include language-switch.html %}
+    <a class="post-link" href="{{ page.url | relative_url }}">
+        <h2 class="post-title">{{ page.title | escape }}</h2>
+    </a>
+    <div class="post-meta">
+        <ul class="post-categories">
+            {%- for tag in page.tags -%}
+            <li>{{ tag }}</li>
+            {%- endfor -%}
+        </ul>
+        <div class="post-date"><i class="icon-calendar"></i>{{ page.date | date: date_format }}</div>
+    </div>
 
-      {{ content }}
-  </div>
-  {%- if site.plainwhite.disqus_shortname -%}
-  <div id="disqus_thread" style="margin-top:25px"></div>
-  <script>
-    var disqus_config = function () {
-      this.page.url = '{{ page.url | absolute_url }}';
-      this.page.identifier = '{{ page.url | absolute_url }}';
-    };
-    (function () {
-      var d = document, s = d.createElement('script');
-      s.src = 'https://{{ site.plainwhite.disqus_shortname }}.disqus.com/embed.js';
-      s.setAttribute('data-timestamp', +new Date());
-      (d.head || d.body).appendChild(s);
-    })();
-  </script>
-  <noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript" rel="nofollow">comments
-      powered by Disqus.</a></noscript>
-  {%- endif -%}
+    <div class="post">
+        {% include language-switch.html %}
+
+        {{ content }}
+    </div>
+
+    <hr style="margin-top: 50px; border: 0; border-top: 1px solid #eee;">
+
+    <div class="newsletter-section"
+         style="margin: 30px 0; padding: 20px; background-color: #f9f9f9; border-radius: 8px; text-align: center;">
+        {% if page.lang == 'pl' %}
+        <h3 style="margin-top: 0;">Podobało się? Zostańmy w kontakcie! 📧</h3>
+        <p>Zapisz się, aby otrzymywać powiadomienia o nowych wpisach i technicznych smaczkach.</p>
+        <form action="https://buttondown.email/api/emails/embed-subscribe/TWOJA_NAZWA" method="post"
+              target="popupwindow" onsubmit="window.open('https://buttondown.email/TWOJA_NAZWA', 'popupwindow')"
+              class="embeddable-buttondown-form">
+            <input type="email" name="email" id="bd-email" placeholder="Twój e-mail..."
+                   style="padding: 10px; width: 250px; border: 1px solid #ddd; border-radius: 4px;">
+            <input type="submit" value="Subskrybuj"
+                   style="padding: 10px 20px; background-color: #333; color: white; border: none; border-radius: 4px; cursor: pointer;">
+        </form>
+        <p style="font-size: 0.8rem; color: #777; margin-top: 10px;">Zero spamu, tylko konkret. Możesz się wypisać w
+            każdej chwili.</p>
+        {% else %}
+        <h3 style="margin-top: 0;">Enjoyed the read? Let's stay in touch! 📧</h3>
+        <p>Subscribe to get notified about new posts and technical deep dives.</p>
+        <form action="https://buttondown.email/api/emails/embed-subscribe/TWOJA_NAZWA" method="post"
+              target="popupwindow" onsubmit="window.open('https://buttondown.email/TWOJA_NAZWA', 'popupwindow')"
+              class="embeddable-buttondown-form">
+            <input type="email" name="email" id="bd-email" placeholder="Your email..."
+                   style="padding: 10px; width: 250px; border: 1px solid #ddd; border-radius: 4px;">
+            <input type="submit" value="Subscribe"
+                   style="padding: 10px 20px; background-color: #333; color: white; border: none; border-radius: 4px; cursor: pointer;">
+        </form>
+        <p style="font-size: 0.8rem; color: #777; margin-top: 10px;">No spam, just tech. Unsubscribe at any time.</p>
+        {% endif %}
+    </div>
+
+    <div class="comments">
+        {% include giscus.html %}
+    </div>
+
 </div>
