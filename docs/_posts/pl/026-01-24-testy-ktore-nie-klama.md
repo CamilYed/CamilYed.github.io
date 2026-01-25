@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "Czego nauczyłem się po latach na temat testów? Moje subiektywne Best Practices"
+title: "Czego nauczyłem się po latach na temat testów? Moje subiektywne Best Practices cz. 1"
 lang: pl
 ref: modern-testing-practices
 date: 2026-01-24
@@ -131,6 +131,7 @@ ustawianie pól, settery, techniczne asercje jedna po drugiej).
 W kolejnych sekcjach zobaczymy, jak za pomocą wzorców takich jak Test Data Builder oraz Custom Assertions, możemy
 sprawić, że ten sam test będzie wyglądał niemal jak zdania w języku naturalnym.
 
+---
 ### 2. Test Data Builder
 
 Wróćmy do naszego „smutnego kodzika” z sekcji wyżej. Dlaczego on tak naprawdę kuje w oczy? Bo za każdym razem, gdy
@@ -267,6 +268,7 @@ void shouldDeactivateAdminUserAndLogEvent() {
 Jak widać, ukryliśmy cały nieistotny szum informacyjny w sekcji given, gdzie skupiamy się jedynie na roli użytkownika,
 to ona ma znaczenie w tym teście.
 
+---
 ### 3. Asercje-najczęstsze błędy
 
 Mając już idealnie przygotowane dane wejściowe, musimy zadbać o to, by wynik testu faktycznie o czymś nas informował.
@@ -350,4 +352,226 @@ void shouldGetUserDetailsAndValidateContract() {
 }
 ```
 
+---
+
 ### 4. Custom Assertion
+
+Często w sekcji `// then` spotykam kod, który próbuje weryfikować stan systemu po przejściu złożonego procesu. Zamiast
+jasnego sygnału, mamy tam logikę, pętle i ręczne wyciąganie danych.
+
+☹️ **Smutny kodzik:**
+```java
+// then
+var logs = auditRepository.findByUserId(user.getId());
+
+// Musimy sprawdzić czy w ogóle coś przyszło
+assertNotNull(logs);
+assertEquals(3, logs.size());
+
+// Szukamy konkretnego loga deaktywacji wśród wielu innych
+AuditLog deactivationLog = null;
+for (AuditLog log : logs) {
+    if ("USER_DEACTIVATED".equals(log.getEventName())) {
+        deactivationLog = log;
+    }
+}
+
+// Sprawdzamy szczegóły - masa technicznych asercji
+assertNotNull(deactivationLog, "Log deaktywacji powinien istnieć!");
+assertEquals("PROCESSED", deactivationLog.getStatus());
+assertEquals("AUTH_SERVICE", deactivationLog.getSystemName());
+assertEquals("ADMIN_123", deactivationLog.getActorId());
+assertTrue(deactivationLog.getTimestamp().isAfter(LocalDateTime.now().minusMinutes(1)));
+
+// I jeszcze sprawdzamy stan pozostałych logów
+logs.forEach(l -> assertEquals("SUCCESS", l.getDeliveryStatus()));
+```
+Czemu takie podejście uważam, za złe?
+
+1. Pętla w teście: Jeśli masz for lub if w teście, to de facto piszesz algorytm. A algorytmy bywają błędne. Czy teraz
+   potrzebujemy testu do testu?
+2. Niskopoziomowe detale: Czytając to, musisz analizować jak działa for, jak porównujemy Stringi i czy assertNotNull
+   jest w dobrym miejscu. Intencja biznesowa ("użytkownik został zdeaktywowany i odnotowano to w audycie") ginie w
+   gąszczu technicznych instrukcji.
+3. Efekt domina: Jeśli zmieni się struktura loga, musisz poprawić te 15 linii kodu w każdym teście, który go sprawdza.
+
+Rozwiązanie: Własna klasa asercji, korzystająca wewnątrz z np. biblioteki `AsserJ`:
+
+```java
+public class UserAssert extends AbstractAssert<UserAssert, User> {
+
+    public UserAssert hasAuditLog(String eventName) {
+        isNotNull();
+        var logs = TestBeanProvider.getBean(AuditRepository.class).findByUserId(actual.getId());
+
+        // AssertJ zrobi pętle za nas i wypluje czytelny błąd jeśli nie znajdzie elementu
+        assertThat(logs)
+                .extracting(AuditLog::getEventName)
+                .contains(eventName);
+
+        return this;
+    }
+    // ... reszta metod
+}
+```
+
+Dodatkową zaletą jest bardziej precyzyjny komunikat, kiedy asercja się załamuje, nie dostaniemy ogólnego nic
+niemówiącego nam tekstu jak `expected true but was fale`, ale np.
+`Expected logs to contain 'USER_DEACTIVATED' but found ['INITIAL_CREATION', 'LOGIN_SUCCESS']`
+
+Przykład użycia:
+
+```java
+// then
+assertThat(user)
+    .isDeactivated()
+    .hasAuditLog("USER_DEACTIVATED")
+    .isProcessedBy("AUTH_SERVICE")
+    .issuedBy("ADMIN_123");
+```
+
+---
+### 5. Domain Specific Language
+
+Czy możemy pójść jeszcze dalej i spróbować doprowadzić do tego, aby test przypomniał faktyczne wymagania biznesowe,
+które powinny być agnostyczne wobec zastosowanych technologii, bo co interesuje biznes, że dane użytkownika trzymamy
+w Mongo zamiast bazie relacyjnej? Po drugie, nowe osoby dołączające do projektu mogą łatwiej przyswoić sobie wiedzę
+domenową, możemy wspiąć się na poziom, gdzie testy nie tylko dostarczają nam potwierdzenia, że nasz system działa wedle
+określonych zasad i reguł, ale stanowią jego żywą dokumentację biznesową, ponieważ prawda leży w kodzie, a nie w wymaganiach
+spisanych np. na `Confluence`.
+
+#### 5.1 Interfejs z domyślną implementacją jako podstawowy building block
+
+Zamiast wołać repozytorium, test "ma zdolność" zarządzania użytkownikami. Wykorzystamy do tego Interfejsy-Zdolności (
+Abilities). Pozwalają one "wstrzykiwać" zachowania do testu bez zaśmiecania go adnotacjami @Autowired czy technicznym
+kodem infrastruktury.
+
+```java
+interface UserAbility {
+    // Ukrywamy Springa i bazę danych
+    default User thereIs(UserBuilder builder) {
+        var user = builder.build();
+        return TestBeanProvider.getBean(UserRepository.class).save(user);
+    }
+
+    // Domena: co się dzieje w systemie
+    default void userIsDeactivated(User user, String reason) {
+        var service = TestBeanProvider.getBean(UserService.class);
+        user.deactivate(reason);
+        service.update(user);
+    }
+}
+
+interface AuditAbility {
+    default void thereIsAnInitialLogFor(User user) {
+        var log = new AuditLog("INITIAL_CREATION", user.getId(), LocalDateTime.now(), "SYSTEM");
+        TestBeanProvider.getBean(AuditRepository.class).save(log);
+    }
+}
+```
+
+#### 5.2 Przykład użycia
+
+```java
+class UserDeactivationTest implements UserAbility, AuditAbility {
+
+    @Test
+    void shouldDeactivateAdminUserAndLogEvent() {
+        // given
+        var admin = thereIs(aUser().withRole("ADMIN").withStatus("Active"));
+        
+        // and
+        thereIsAnInitialLogFor(admin);
+
+        // when
+        userIsDeactivated(admin, "User requested");
+
+        // then
+        assertThatUser(admin)
+                .isDeactivated()
+                .hasDeactivationReason("User requested")
+                .hasAuditLog("STATUS_CHANGE")
+                .isProcessedBy("AUTH_SERVICE");
+    }
+    
+}
+```
+
+Przykład jak można łatwo w Springu wyciągać beany w testach na potrzeby np. interfejsów `Ability`
+
+```java
+@Component
+public class TestBeanProvider implements ApplicationContextAware {
+    private static ApplicationContext context;
+
+    @Override
+    public void setApplicationContext(ApplicationContext applicationContext) {
+        context = applicationContext;
+    }
+
+    public static <T> T getBean(Class<T> beanClass) {
+        return context.getBean(beanClass);
+    }
+}
+```
+
+---
+#### 5.3 Co zyskujemy dzięki takiej abstrakcji?
+
+Powyższy test nie jest już kodem, który zrozumie tylko programista, a czytelnym opisem zachowania systemu. Wyjście na
+ten poziom abstrakcji niesie ze sobą konkretne korzyści architektoniczne:
+
+- Agnostycyzm technologiczny: Jeśli za rok zapadnie decyzja o zmianie bazy danych z relacyjnej na dokumentową, sam
+scenariusz testowy pozostanie nietknięty. Zmienisz jedynie implementację wewnątrz UserAbility, a logika biznesowa testu
+nadal będzie poprawnie weryfikować system.
+
+- Ochrona przed nieaktualną dokumentacją: Dokumentacja na Confluence czy w Jirze starzeje się w sekundę po zamknięciu zadania.
+Test napisany w ten sposób to `Executable Specification` – specyfikacja, która nie może kłamać, bo jeśli przestanie być
+aktualna, system po prostu nie przejdzie procesu `CI/CD`.
+
+- Szybszy Onboarding: Nowy programista w zespole nie musi analizować, jakie repozytoria i serwisy są potrzebne, by
+przygotować stan bazy. Korzysta z gotowych "zdolności" (`Abilities`), dzięki czemu uczy się procesów biznesowych, a nie
+skupia na technologicznym szumie informacji.
+
+- Wspólny język (Ubiquitous Language): Kod testu zaczyna brzmieć tak, jak rozmowa z Product Ownerem. "There is an
+admin", "User is deactivated" – to terminy, które rozumie każdy, nie tylko deweloperzy.
+
+---
+### Podsumowanie (Część 1)
+
+Dobra kultura testowania to nie tylko wysoki procent w raporcie pokrycia kodu. To przede wszystkim zaufanie do własnego
+rozwiązania i łatwość jego rozwoju. W tej części skupiliśmy się na czytelności i komunikacji. Przeszliśmy drogę:
+
+Od technicznego szumu i "ściany tekstu", przez wzorce `Test Data Builder` i `Custom Assertions`.
+
+Aż po stworzenie własnego Domenowego DSL, który sprawia, że test staje się specyfikacją biznesową, a nie tylko
+kawałkiem kodu rozumianego przez programistę.
+
+Pamiętaj: jeśli test trudno się czyta, nikt nie będzie go utrzymywał. **A martwy test jest gorszy niż brak testu**.
+
+---
+
+### Co dalej
+
+Czytelność to dopiero połowa sukcesu. Nawet najładniejszy test będzie bezużyteczny, jeśli co drugi build na pipeline
+będzie na czerwono bez wyraźnego powodu (`flaky tests`), będzie działał wolno albo zacznie nas oszukiwać przez to, że wszystko
+dookoła zamockowaliśmy z użyciem np. Mockito, a jego debugowanie nie przynosi rozwiązania.
+
+W kolejnej części porozmawiamy o:
+
+- **Dlaczego unikam Mockito i testuję "Black Box"**: Wolę testować prawdziwe implementacje (często z wersjami In-Memory
+  dla unitów) zamiast pisać testy, które weryfikują tylko to, czy wywołaliśmy mocka.
+
+- **Cisi zabójcy wydajności:** Czyli dlaczego adnotacje `@DirtiesContext` i `@SpyBean `to zło, które sprawia, że Spring
+  przeładowuje kontekst w kółko i build nagle się wydłuża.
+
+- **Panowanie nad czasem:** Jak przestać walczyć z `LocalDateTime.now()` i zacząć używać własnego `Clock Providera`, żeby
+  testy dat były przewidywalne.
+
+- **Asynchroniczność:** Jak wyrzucić `Thread.sleep()` i zastąpić go przez `Awaitility`, żeby test nie czekał ani sekundy
+  za długo.
+
+- **Izolacja i brak stanu**: Dlaczego używam Database Cleanera zamiast adnotacji `@Transactional` na klasach testowych.
+
+- **Infrastruktura**: Krótki wstęp do Testcontainers i Wiremock, czyli jak testować z prawdziwą bazą i API bez udawania,
+  że "u mnie na H2 działa".
