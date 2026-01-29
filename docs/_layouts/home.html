@@ -29,7 +29,7 @@ layout: default
         padding: 5px 10px;
     }
     .year-group-wrapper:hover {
-        transform: scale(1.2);
+        transform: scale(1.15); /* Nieco mniejszy zoom, żeby było płynniej */
         opacity: 1 !important;
     }
     .year-group-wrapper:hover .month-list {
@@ -184,7 +184,8 @@ layout: default
                     <div class="year-group-wrapper" style="opacity: 0.7;">
                         <a href="javascript:void(0)" onclick="filterByYear('{{ year.name }}')" class="year-link" data-year="{{ year.name }}"
                            style="text-decoration: none; color: #333; font-size: 0.9rem; font-weight: 800;">{{ year.name }}</a>
-                        <div class="month-list" style="display: flex; gap: 3px; font-size: 0.5rem; color: #bbb; opacity: 0; transition: opacity 0.3s;">
+
+                        <div class="month-list" style="display: flex; gap: 3px; font-size: 0.6rem; font-weight: 600; color: #555; opacity: 0; transition: opacity 0.3s;">
                             {% assign months = year.items | group_by_exp: "p", "p.date | date: '%b'" %}
                             {% for month in months %}{{ month.name | downcase }}{% unless forloop.last %}.{% endunless %}{% endfor %}
                         </div>
@@ -276,7 +277,7 @@ layout: default
     function updateUI() {
         // Reset styli dla wszystkich
         document.querySelectorAll('.footer-tag-link').forEach(l => {
-            // Przywracamy styl domyślny pastylki (usuwamy inline style nadane przez JS, żeby CSS działał)
+            // Przywracamy styl domyślny pastylki
             l.style.backgroundColor = '#f3f4f6';
             l.style.color = '#555';
             l.style.opacity = '1';
@@ -306,7 +307,7 @@ layout: default
         if (activeYear !== 'all') {
             const el = document.querySelector(`.year-group-wrapper:has([data-year="${activeYear}"])`) ||
                        document.querySelector(`[data-year="${activeYear}"]`).parentElement;
-            if (el) { el.style.opacity = '1'; el.style.transform = 'scale(1.1)'; }
+            if (el) { el.style.opacity = '1'; el.style.transform = 'scale(1.15)'; }
         }
     }
 
@@ -315,7 +316,6 @@ layout: default
         const btn = document.getElementById('toggle-tags-btn');
         const isHidden = (extra.length > 0 && extra[0].style.display === 'none');
         extra.forEach(t => {
-            // Dla pillsów zmieniamy display na inline-block
             t.style.display = isHidden ? 'inline-block' : 'none';
         });
         btn.innerText = isHidden ? '-' : '+';
