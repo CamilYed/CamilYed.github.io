@@ -7,66 +7,155 @@ layout: default
       var userLang = navigator.language || navigator.userLanguage;
       var path = window.location.pathname;
 
-      console.log("Próba przekierowania...");
-      console.log("Wykryty język:", userLang);
-      console.log("Aktualna ścieżka:", path);
-
+      // Redirect root to language-specific subdirectories
       if (path === "/" || path === "/index.html" || path === "") {
         if (userLang.toLowerCase().startsWith('pl')) {
-          console.log("Kieruję na /pl/");
           window.location.replace("/pl/");
         } else {
-          console.log("Kieruję na /en/");
           window.location.replace("/en/");
         }
       }
     })();
 </script>
-{%- comment -%} 1. Logika wyboru języka {%- endcomment -%}
+
 {%- assign current_lang = page.lang | default: "en" -%}
 {%- assign posts = site.posts | where: "lang", current_lang -%}
 
-{%- comment -%}
-USUŃMY {{ content }}, jeśli w plikach index.md w folderach /pl/ i /en/
-masz ręcznie wpisane listy linków. To one powodują dublowanie.
-{%- endcomment -%}
-
 {%- if posts.size > 0 -%}
-<ul class="posts">
-    <li>
-        <h1 id="posts-label">posts</h1>
-    </li>
+<div id="blog-content-area">
+    <ul class="posts" id="posts-list">
+        <li>
+            <h1 id="posts-label">posts</h1>
+        </li>
 
-    {%- for post in posts -%}
-    <li>
-        {%- assign date_format = site.plainwhite.date_format | default: "%b %-d, %Y" -%}
-        <a class="post-link" href="{{ post.url | relative_url }}">
-            <h2 class="post-title">{{ post.title | escape }}</h2>
-        </a>
+        {%- for post in posts -%}
+        {%- comment -%} Add tag slugs as classes for filtering logic {%- endcomment -%}
+        <li class="post-item {% for tag in post.tags %}{{ tag | slugify }} {% endfor %}">
+            {%- assign date_format = site.plainwhite.date_format | default: "%b %-d, %Y" -%}
+            <a class="post-link" href="{{ post.url | relative_url }}">
+                <h2 class="post-title">{{ post.title | escape }}</h2>
+            </a>
 
-        <div class="post-meta">
-            <ul class="post-categories">
-                {%- for tag in post.tags -%}
-                <li>{{ tag }}</li>
-                {%- endfor -%}
-            </ul>
-            <div class="post-date">
-                <i class="icon-calendar"></i>
-                {{ post.date | date: date_format }}
+            <div class="post-meta">
+                <ul class="post-categories">
+                    {%- for tag in post.tags -%}
+                    <li style="cursor: pointer;" onclick="filterByTag('{{ tag | slugify }}')">{{ tag }}</li>
+                    {%- endfor -%}
+                </ul>
+                <div class="post-date">
+                    <i class="icon-calendar"></i>
+                    {{ post.date | date: date_format }}
+                </div>
+            </div>
+
+            <div class="post">
+                {%- if post.excerpt and post.excerpt != "" -%}
+                {{ post.excerpt }}
+                {%- else -%}
+                <p>{{ post.content | strip_html | truncatewords: 40 }}</p>
+                {%- endif -%}
+                <a href="{{ post.url | relative_url }}" class="read-more-btn">Read More</a>
+            </div>
+        </li>
+        {%- endfor -%}
+    </ul>
+
+    <div class="post-container" style="margin-top: 60px;">
+        <div class="post" style="border-top: 1px solid #eee; padding-top: 20px;">
+            <p style="font-size: 0.7rem; font-weight: bold; color: #bbb; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 15px;">
+                {% if current_lang == "pl" %}Filtruj tematy{% else %}Filter topics{% endif %}
+            </p>
+
+            <div style="display: flex; flex-wrap: wrap; gap: 12px 18px; align-items: baseline;" id="tag-cloud">
+                <a href="javascript:void(0)" onclick="filterByTag('all')" id="tag-all"
+                   style="text-decoration: underline; color: #000; font-size: 0.95rem; font-weight: bold;">
+                    {% if current_lang == "pl" %}Wszystkie{% else %}All{% endif %}
+                </a>
+
+                {% capture raw_tags %}{% for post in posts %}{% for tag in post.tags %}{{ tag }}|{% endfor %}{% endfor %}{% endcapture %}
+                {% assign tag_array = raw_tags | split: "|" | sort %}
+                {% assign unique_tags = tag_array | uniq %}
+
+                {% for tag in unique_tags %}
+                {% comment %} Calculate tag frequency for visual weight {%- endcomment -%}
+                {% assign count = 0 %}
+                {% for t in tag_array %}{% if t == tag %}{% assign count = count | plus: 1 %}{% endif %}{% endfor %}
+
+                <a href="javascript:void(0)" onclick="filterByTag('{{ tag | slugify }}')"
+                   class="footer-tag-link {% if forloop.index > 12 %}hidden-tag{% endif %}"
+                   data-tag="{{ tag | slugify }}"
+                   style="text-decoration: none;
+                              color: {% if count > 1 %}#111{% else %}#888{% endif %};
+                              font-size: {% if count > 2 %}1.05rem{% elsif count > 1 %}0.95rem{% else %}0.85rem{% endif %};
+                              font-weight: {% if count > 1 %}700{% else %}400{% endif %};
+                              {% if forloop.index > 12 %}display: none;{% endif %}">
+                    {{ tag }}
+                </a>
+                {% endfor %}
+
+                {% if unique_tags.size > 12 %}
+                <a href="javascript:void(0)" id="toggle-tags-btn" onclick="toggleTags()"
+                   style="font-size: 0.75rem; font-weight: 700; color: #aaa; text-transform: uppercase; margin-left: 5px;">
+                    + Show more
+                </a>
+                {% endif %}
             </div>
         </div>
+    </div>
+</div>
 
-        <div class="post">
-            {%- if post.excerpt and post.excerpt != "" -%}
-            {{ post.excerpt }}
-            {%- else -%}
-            <p>{{ post.content | strip_html | truncatewords: 40 }}</p>
-            {%- endif -%}
-            <a href="{{ post.url | relative_url }}" class="read-more-btn">Read More</a>
-        </div>
-    </li>
-    {%- endfor -%}
-</ul>
+<script>
+    // Collapses/Expands the tag list
+    function toggleTags() {
+        const hiddenTags = document.querySelectorAll('.hidden-tag');
+        const btn = document.getElementById('toggle-tags-btn');
+        const isCollapsed = hiddenTags[0].style.display === 'none';
+
+        hiddenTags.forEach(tag => {
+            tag.style.display = isCollapsed ? 'inline' : 'none';
+        });
+
+        btn.innerText = isCollapsed ? '- Show less' : '+ Show more';
+    }
+
+    // Handles the post filtering logic
+    function filterByTag(tag) {
+        const posts = document.querySelectorAll('.post-item');
+        const links = document.querySelectorAll('.footer-tag-link');
+        const allBtn = document.getElementById('tag-all');
+        const container = document.getElementById('blog-content-area');
+
+        // Prevent page jump by locking height
+        container.style.minHeight = container.offsetHeight + 'px';
+
+        posts.forEach(p => {
+            p.style.display = (tag === 'all' || p.classList.contains(tag)) ? 'block' : 'none';
+        });
+
+        // UI Feedback: adjust opacity and decoration without breaking weighted font styles
+        links.forEach(l => {
+            l.style.textDecoration = 'none';
+            l.style.opacity = (tag === 'all' || l.getAttribute('data-tag') === tag) ? '1' : '0.4';
+        });
+
+        allBtn.style.textDecoration = (tag === 'all') ? 'underline' : 'none';
+        allBtn.style.opacity = (tag === 'all') ? '1' : '0.4';
+
+        if (tag !== 'all') {
+            const active = document.querySelector(`[data-tag="${tag}"]`);
+            if (active) {
+                active.style.textDecoration = 'underline';
+                active.style.opacity = '1';
+            }
+        }
+
+        // Snap to top instantly for better UX
+        window.scrollTo({ top: 0, behavior: 'instant' });
+
+        // Release the height lock
+        setTimeout(() => { container.style.minHeight = 'auto'; }, 100);
+    }
+</script>
 
 {%- else -%}
 <div class="coming-soon" style="text-align: center; padding: 40px;">
