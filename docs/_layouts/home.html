@@ -16,6 +16,102 @@ layout: default
     })();
 </script>
 
+<style>
+    /* Estetyczny scrollbar dla archiwum */
+    .archive-scroll-container::-webkit-scrollbar { height: 3px; }
+    .archive-scroll-container::-webkit-scrollbar-track { background: transparent; }
+    .archive-scroll-container::-webkit-scrollbar-thumb { background: #eee; border-radius: 10px; }
+
+    /* Efekt Zoom na latach */
+    .year-group-wrapper {
+        transition: transform 0.3s ease, opacity 0.3s ease;
+        cursor: pointer;
+        padding: 5px 10px;
+    }
+    .year-group-wrapper:hover {
+        transform: scale(1.2);
+        opacity: 1 !important;
+    }
+    .year-group-wrapper:hover .month-list {
+        opacity: 1 !important;
+    }
+
+    /* --- NOWE STYLE: Smart Footer --- */
+    #blog-footer-sticky {
+        /* Domyślnie schowany, wystaje tylko uchwyt (30px) */
+        transform: translateY(calc(100% - 20px));
+        transition: transform 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+    }
+
+    /* Po najechaniu myszką wysuwa się całość */
+    #blog-footer-sticky:hover {
+        transform: translateY(0);
+    }
+
+    /* Uchwyt do wyciągania stopki */
+    #footer-handle {
+        width: 100%;
+        height: 20px;
+        position: absolute;
+        top: 0;
+        left: 0;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: transparent;
+    }
+
+    /* Pasek graficzny wewnątrz uchwytu */
+    #footer-handle::after {
+        content: '';
+        width: 40px;
+        height: 4px;
+        background-color: #ddd;
+        border-radius: 2px;
+        transition: background-color 0.3s;
+    }
+
+    #blog-footer-sticky:hover #footer-handle::after {
+        background-color: #bbb;
+    }
+
+    /* --- NOWE STYLE: Tagi jako Pastylki (Pills) --- */
+    .footer-tag-link {
+        display: inline-block;
+        padding: 4px 12px;
+        margin: 2px;
+        background-color: #f3f4f6; /* Jasne tło */
+        border-radius: 999px;      /* Zaokrąglenie */
+        border: 1px solid transparent;
+        text-decoration: none !important; /* Usunięcie podkreślenia */
+        transition: all 0.2s ease;
+    }
+
+    .footer-tag-link:hover {
+        background-color: #000 !important;
+        color: #fff !important;
+        transform: translateY(-2px);
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+
+    /* Responsywność footera */
+    @media (max-width: 768px) {
+        #footer-grid { grid-template-columns: 1fr !important; gap: 20px !important; }
+        #blog-footer-sticky { padding: 10px 0 !important; }
+
+        /* Na mobilkach może być lepiej widoczny mały napis 'Filters' zamiast tylko paska */
+         #footer-handle::before {
+            content: 'FILTERS ▲';
+            font-size: 8px;
+            color: #999;
+            margin-right: 5px;
+            letter-spacing: 1px;
+            font-weight: bold;
+        }
+    }
+</style>
+
 {%- assign current_lang = page.lang | default: "en" -%}
 {%- assign posts = site.posts | where: "lang", current_lang -%}
 
@@ -61,52 +157,48 @@ layout: default
         </div>
     </div>
 
-    <div style="height: 160px; display: block;"></div>
+    <div style="height: 100px; display: block;"></div>
 
     <div id="blog-footer-sticky" style="
         position: fixed;
         bottom: 0;
         left: 0;
         width: 100%;
-        background: rgba(255, 255, 255, 0.95);
-        backdrop-filter: blur(10px);
-        -webkit-backdrop-filter: blur(10px);
+        background: rgba(255, 255, 255, 0.98);
+        backdrop-filter: blur(15px);
+        -webkit-backdrop-filter: blur(15px);
         border-top: 1px solid #eee;
-        padding: 20px 0;
+        padding: 30px 0 20px 0; /* Zwiększony padding góra na uchwyt */
         z-index: 9999;
-        box-shadow: 0 -5px 20px rgba(0,0,0,0.05);
-        display: block !important;
+        box-shadow: 0 -5px 25px rgba(0,0,0,0.08);
     ">
-        <div class="post-container" style="max-width: 800px; margin: 0 auto; display: grid; grid-template-columns: 1.2fr 3fr; gap: 40px; padding: 0 20px;">
+        <div id="footer-handle"></div>
 
-            <div>
-                <p style="font-size: 0.6rem; font-weight: 800; color: #bbb; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 10px;">
-                    Archive
-                </p>
-                <div style="display: flex; flex-direction: column; gap: 8px;">
+        <div id="footer-grid" class="post-container" style="max-width: 900px; margin: 0 auto; display: grid; grid-template-columns: 1.5fr 2.5fr; gap: 30px; padding: 0 20px; align-items: start;">
+
+            <div style="overflow: hidden;">
+                <p style="font-size: 0.55rem; font-weight: 800; color: #ccc; text-transform: uppercase; letter-spacing: 1.2px; margin-bottom: 5px;">Archive</p>
+                <div class="archive-scroll-container" style="display: flex; overflow-x: auto; overflow-y: hidden; gap: 15px; padding-bottom: 5px; white-space: nowrap;">
                     {% assign postsByYear = posts | group_by_exp: "post", "post.date | date: '%Y'" %}
                     {% for year in postsByYear %}
-                    <div class="archive-year-group">
+                    <div class="year-group-wrapper" style="opacity: 0.7;">
                         <a href="javascript:void(0)" onclick="filterByYear('{{ year.name }}')" class="year-link" data-year="{{ year.name }}"
-                           style="text-decoration: none; color: #444; font-size: 0.85rem; font-weight: bold;">{{ year.name }}</a>
-                        <div style="display: flex; gap: 5px; flex-wrap: wrap; margin-top: 2px; opacity: 0.6;">
+                           style="text-decoration: none; color: #333; font-size: 0.9rem; font-weight: 800;">{{ year.name }}</a>
+                        <div class="month-list" style="display: flex; gap: 3px; font-size: 0.5rem; color: #bbb; opacity: 0; transition: opacity 0.3s;">
                             {% assign months = year.items | group_by_exp: "p", "p.date | date: '%b'" %}
-                            {% for month in months %}
-                            <span style="font-size: 0.6rem; color: #666; text-transform: lowercase;">{{ month.name }}</span>
-                            {% endfor %}
+                            {% for month in months %}{{ month.name | downcase }}{% unless forloop.last %}.{% endunless %}{% endfor %}
                         </div>
                     </div>
                     {% endfor %}
                 </div>
             </div>
 
-            <div>
-                <p style="font-size: 0.6rem; font-weight: 800; color: #bbb; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 10px;">
-                    Topics
-                </p>
-                <div style="display: flex; flex-wrap: wrap; gap: 8px 15px; align-items: baseline;">
+            <div style="border-left: 1px solid #f9f9f9; padding-left: 20px;">
+                <p style="font-size: 0.55rem; font-weight: 800; color: #ccc; text-transform: uppercase; letter-spacing: 1.2px; margin-bottom: 8px;">Topics</p>
+                <div style="display: flex; flex-wrap: wrap; gap: 8px; align-items: center;">
                     <a href="javascript:void(0)" onclick="resetFilters()" id="tag-all"
-                       style="text-decoration: underline; color: #000; font-size: 0.8rem; font-weight: bold;">All</a>
+                       class="footer-tag-link"
+                       style="background: #000; color: #fff; font-weight: 800;">All</a>
 
                     {% capture raw_tags %}{% for post in posts %}{% for tag in post.tags %}{{ tag }}|{% endfor %}{% endfor %}{% endcapture %}
                     {% assign tag_array = raw_tags | split: "|" | sort %}
@@ -115,20 +207,20 @@ layout: default
                     {% for tag in unique_tags %}
                     {% assign count = 0 %}{% for t in tag_array %}{% if t == tag %}{% assign count = count | plus: 1 %}{% endif %}{% endfor %}
                     <a href="javascript:void(0)" onclick="filterByTag('{{ tag | slugify }}')"
-                       class="footer-tag-link {% if forloop.index > 10 %}extra-tag{% endif %}"
+                       class="footer-tag-link {% if forloop.index > 15 %}extra-tag{% endif %}"
                        data-tag="{{ tag | slugify }}"
-                       style="text-decoration: none;
-                              color: {% if count > 1 %}#111{% else %}#888{% endif %};
-                              font-size: 0.8rem;
+                       style="
+                              color: {% if count > 1 %}#222{% else %}#555{% endif %};
+                              font-size: 0.75rem;
                               font-weight: {% if count > 1 %}700{% else %}400{% endif %};
-                              {% if forloop.index > 10 %}display: none;{% endif %}">
+                              {% if forloop.index > 15 %}display: none;{% endif %}">
                         {{ tag }}
                     </a>
                     {% endfor %}
 
-                    {% if unique_tags.size > 10 %}
+                    {% if unique_tags.size > 15 %}
                     <a href="javascript:void(0)" id="toggle-tags-btn" onclick="toggleMoreTags()"
-                       style="font-size: 0.65rem; font-weight: bold; color: #999; text-transform: uppercase; border-bottom: 1px solid #eee; cursor: pointer;">+ More</a>
+                       style="font-size: 0.6rem; font-weight: bold; color: #bbb; text-transform: uppercase; cursor: pointer; padding: 4px 8px; background: #fff; border: 1px solid #eee; border-radius: 99px;">+</a>
                     {% endif %}
                 </div>
             </div>
@@ -182,23 +274,39 @@ layout: default
     }
 
     function updateUI() {
-        document.querySelectorAll('.footer-tag-link, .year-link').forEach(l => {
-            l.style.textDecoration = 'none';
-            l.style.opacity = '0.4';
+        // Reset styli dla wszystkich
+        document.querySelectorAll('.footer-tag-link').forEach(l => {
+            // Przywracamy styl domyślny pastylki (usuwamy inline style nadane przez JS, żeby CSS działał)
+            l.style.backgroundColor = '#f3f4f6';
+            l.style.color = '#555';
+            l.style.opacity = '1';
         });
+
+        document.querySelectorAll('.year-group-wrapper').forEach(l => {
+             l.style.opacity = '0.4';
+             l.style.transform = 'scale(1)';
+        });
+
         const allBtn = document.getElementById('tag-all');
         if(allBtn) {
             const isDefault = activeTag === 'all' && activeYear === 'all';
-            allBtn.style.opacity = isDefault ? '1' : '0.4';
-            allBtn.style.textDecoration = isDefault ? 'underline' : 'none';
+            allBtn.style.backgroundColor = isDefault ? '#000' : '#f3f4f6';
+            allBtn.style.color = isDefault ? '#fff' : '#555';
         }
+
         if (activeTag !== 'all') {
             const el = document.querySelector(`[data-tag="${activeTag}"]`);
-            if (el) { el.style.textDecoration = 'underline'; el.style.opacity = '1'; }
+            if (el) {
+                // Styl aktywnej pastylki
+                el.style.backgroundColor = '#000';
+                el.style.color = '#fff';
+                el.style.fontWeight = '800';
+            }
         }
         if (activeYear !== 'all') {
-            const el = document.querySelector(`[data-year="${activeYear}"].year-link`);
-            if (el) { el.style.textDecoration = 'underline'; el.style.opacity = '1'; }
+            const el = document.querySelector(`.year-group-wrapper:has([data-year="${activeYear}"])`) ||
+                       document.querySelector(`[data-year="${activeYear}"]`).parentElement;
+            if (el) { el.style.opacity = '1'; el.style.transform = 'scale(1.1)'; }
         }
     }
 
@@ -206,9 +314,11 @@ layout: default
         const extra = document.querySelectorAll('.extra-tag');
         const btn = document.getElementById('toggle-tags-btn');
         const isHidden = (extra.length > 0 && extra[0].style.display === 'none');
-
-        extra.forEach(t => t.style.display = isHidden ? 'inline' : 'none');
-        btn.innerText = isHidden ? '- Less' : '+ More';
+        extra.forEach(t => {
+            // Dla pillsów zmieniamy display na inline-block
+            t.style.display = isHidden ? 'inline-block' : 'none';
+        });
+        btn.innerText = isHidden ? '-' : '+';
     }
 </script>
 {%- endif -%}
