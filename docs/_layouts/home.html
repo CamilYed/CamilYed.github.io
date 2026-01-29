@@ -2,6 +2,26 @@
 layout: default
 ---
 
+<script type="text/javascript">
+    (function() {
+      var userLang = navigator.language || navigator.userLanguage;
+      var path = window.location.pathname;
+
+      console.log("Próba przekierowania...");
+      console.log("Wykryty język:", userLang);
+      console.log("Aktualna ścieżka:", path);
+
+      if (path === "/" || path === "/index.html" || path === "") {
+        if (userLang.toLowerCase().startsWith('pl')) {
+          console.log("Kieruję na /pl/");
+          window.location.replace("/pl/");
+        } else {
+          console.log("Kieruję na /en/");
+          window.location.replace("/en/");
+        }
+      }
+    })();
+</script>
 {%- comment -%} 1. Logika wyboru języka {%- endcomment -%}
 {%- assign current_lang = page.lang | default: "en" -%}
 {%- assign posts = site.posts | where: "lang", current_lang -%}
