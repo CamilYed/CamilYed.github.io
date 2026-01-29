@@ -6,8 +6,6 @@ layout: default
     (function() {
       var userLang = navigator.language || navigator.userLanguage;
       var path = window.location.pathname;
-
-      // Redirect root to language-specific subdirectories
       if (path === "/" || path === "/index.html" || path === "") {
         if (userLang.toLowerCase().startsWith('pl')) {
           window.location.replace("/pl/");
@@ -22,149 +20,195 @@ layout: default
 {%- assign posts = site.posts | where: "lang", current_lang -%}
 
 {%- if posts.size > 0 -%}
-<div id="blog-content-area">
-    <ul class="posts" id="posts-list">
-        <li>
-            <h1 id="posts-label">posts</h1>
-        </li>
+<div id="blog-wrapper" style="display: flex; flex-direction: column; min-height: 90vh;">
 
-        {%- for post in posts -%}
-        {%- comment -%} Add tag slugs as classes for filtering logic {%- endcomment -%}
-        <li class="post-item {% for tag in post.tags %}{{ tag | slugify }} {% endfor %}">
-            {%- assign date_format = site.plainwhite.date_format | default: "%b %-d, %Y" -%}
-            <a class="post-link" href="{{ post.url | relative_url }}">
-                <h2 class="post-title">{{ post.title | escape }}</h2>
-            </a>
+    <div id="blog-content-area" style="flex: 1; padding-bottom: 50px;">
+        <ul class="posts" id="posts-list">
+            <li><h1 id="posts-label">posts</h1></li>
 
-            <div class="post-meta">
-                <ul class="post-categories">
-                    {%- for tag in post.tags -%}
-                    <li style="cursor: pointer;" onclick="filterByTag('{{ tag | slugify }}')">{{ tag }}</li>
-                    {%- endfor -%}
-                </ul>
-                <div class="post-date">
-                    <i class="icon-calendar"></i>
-                    {{ post.date | date: date_format }}
+            {%- for post in posts -%}
+            {%- assign post_year = post.date | date: "%Y" -%}
+            <li class="post-item {% for tag in post.tags %}{{ tag | slugify }} {% endfor %} year-{{ post_year }}"
+                data-year="{{ post_year }}"
+                style="display: none; margin-bottom: 50px;">
+
+                <a class="post-link" href="{{ post.url | relative_url }}">
+                    <h2 class="post-title">{{ post.title | escape }}</h2>
+                </a>
+
+                <div class="post-meta">
+                    <ul class="post-categories">
+                        {%- for tag in post.tags -%}
+                        <li style="cursor: pointer;" onclick="filterByTag('{{ tag | slugify }}')">{{ tag }}</li>
+                        {%- endfor -%}
+                    </ul>
+                    <div class="post-date"><i class="icon-calendar"></i> {{ post.date | date: "%b %-d, %Y" }}</div>
+                </div>
+
+                <div class="post">
+                    <p>{{ post.content | strip_html | truncatewords: 40 }}</p>
+                    <a href="{{ post.url | relative_url }}" class="read-more-btn">Read More</a>
+                </div>
+            </li>
+            {%- endfor -%}
+        </ul>
+
+        <div style="text-align: center; margin: 20px 0 60px 0;">
+            <button id="load-more-btn" onclick="loadMore()"
+                    style="background: none; border: none; border-bottom: 1px solid #ddd; padding: 5px 10px; cursor: pointer; font-size: 0.7rem; font-weight: bold; letter-spacing: 2px; color: #999; text-transform: uppercase; transition: all 0.3s ease;">
+                Load more
+            </button>
+        </div>
+    </div>
+
+    <div style="height: 160px; display: block;"></div>
+
+    <div id="blog-footer-sticky" style="
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        border-top: 1px solid #eee;
+        padding: 20px 0;
+        z-index: 9999;
+        box-shadow: 0 -5px 20px rgba(0,0,0,0.05);
+        display: block !important;
+    ">
+        <div class="post-container" style="max-width: 800px; margin: 0 auto; display: grid; grid-template-columns: 1.2fr 3fr; gap: 40px; padding: 0 20px;">
+
+            <div>
+                <p style="font-size: 0.6rem; font-weight: 800; color: #bbb; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 10px;">
+                    Archive
+                </p>
+                <div style="display: flex; flex-direction: column; gap: 8px;">
+                    {% assign postsByYear = posts | group_by_exp: "post", "post.date | date: '%Y'" %}
+                    {% for year in postsByYear %}
+                    <div class="archive-year-group">
+                        <a href="javascript:void(0)" onclick="filterByYear('{{ year.name }}')" class="year-link" data-year="{{ year.name }}"
+                           style="text-decoration: none; color: #444; font-size: 0.85rem; font-weight: bold;">{{ year.name }}</a>
+                        <div style="display: flex; gap: 5px; flex-wrap: wrap; margin-top: 2px; opacity: 0.6;">
+                            {% assign months = year.items | group_by_exp: "p", "p.date | date: '%b'" %}
+                            {% for month in months %}
+                            <span style="font-size: 0.6rem; color: #666; text-transform: lowercase;">{{ month.name }}</span>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endfor %}
                 </div>
             </div>
 
-            <div class="post">
-                {%- if post.excerpt and post.excerpt != "" -%}
-                {{ post.excerpt }}
-                {%- else -%}
-                <p>{{ post.content | strip_html | truncatewords: 40 }}</p>
-                {%- endif -%}
-                <a href="{{ post.url | relative_url }}" class="read-more-btn">Read More</a>
-            </div>
-        </li>
-        {%- endfor -%}
-    </ul>
+            <div>
+                <p style="font-size: 0.6rem; font-weight: 800; color: #bbb; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 10px;">
+                    Topics
+                </p>
+                <div style="display: flex; flex-wrap: wrap; gap: 8px 15px; align-items: baseline;">
+                    <a href="javascript:void(0)" onclick="resetFilters()" id="tag-all"
+                       style="text-decoration: underline; color: #000; font-size: 0.8rem; font-weight: bold;">All</a>
 
-    <div class="post-container" style="margin-top: 60px;">
-        <div class="post" style="border-top: 1px solid #eee; padding-top: 20px;">
-            <p style="font-size: 0.7rem; font-weight: bold; color: #bbb; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 15px;">
-                {% if current_lang == "pl" %}Filtruj tematy{% else %}Filter topics{% endif %}
-            </p>
+                    {% capture raw_tags %}{% for post in posts %}{% for tag in post.tags %}{{ tag }}|{% endfor %}{% endfor %}{% endcapture %}
+                    {% assign tag_array = raw_tags | split: "|" | sort %}
+                    {% assign unique_tags = tag_array | uniq %}
 
-            <div style="display: flex; flex-wrap: wrap; gap: 12px 18px; align-items: baseline;" id="tag-cloud">
-                <a href="javascript:void(0)" onclick="filterByTag('all')" id="tag-all"
-                   style="text-decoration: underline; color: #000; font-size: 0.95rem; font-weight: bold;">
-                    {% if current_lang == "pl" %}Wszystkie{% else %}All{% endif %}
-                </a>
-
-                {% capture raw_tags %}{% for post in posts %}{% for tag in post.tags %}{{ tag }}|{% endfor %}{% endfor %}{% endcapture %}
-                {% assign tag_array = raw_tags | split: "|" | sort %}
-                {% assign unique_tags = tag_array | uniq %}
-
-                {% for tag in unique_tags %}
-                {% comment %} Calculate tag frequency for visual weight {%- endcomment -%}
-                {% assign count = 0 %}
-                {% for t in tag_array %}{% if t == tag %}{% assign count = count | plus: 1 %}{% endif %}{% endfor %}
-
-                <a href="javascript:void(0)" onclick="filterByTag('{{ tag | slugify }}')"
-                   class="footer-tag-link {% if forloop.index > 12 %}hidden-tag{% endif %}"
-                   data-tag="{{ tag | slugify }}"
-                   style="text-decoration: none;
+                    {% for tag in unique_tags %}
+                    {% assign count = 0 %}{% for t in tag_array %}{% if t == tag %}{% assign count = count | plus: 1 %}{% endif %}{% endfor %}
+                    <a href="javascript:void(0)" onclick="filterByTag('{{ tag | slugify }}')"
+                       class="footer-tag-link {% if forloop.index > 10 %}extra-tag{% endif %}"
+                       data-tag="{{ tag | slugify }}"
+                       style="text-decoration: none;
                               color: {% if count > 1 %}#111{% else %}#888{% endif %};
-                              font-size: {% if count > 2 %}1.05rem{% elsif count > 1 %}0.95rem{% else %}0.85rem{% endif %};
+                              font-size: 0.8rem;
                               font-weight: {% if count > 1 %}700{% else %}400{% endif %};
-                              {% if forloop.index > 12 %}display: none;{% endif %}">
-                    {{ tag }}
-                </a>
-                {% endfor %}
+                              {% if forloop.index > 10 %}display: none;{% endif %}">
+                        {{ tag }}
+                    </a>
+                    {% endfor %}
 
-                {% if unique_tags.size > 12 %}
-                <a href="javascript:void(0)" id="toggle-tags-btn" onclick="toggleTags()"
-                   style="font-size: 0.75rem; font-weight: 700; color: #aaa; text-transform: uppercase; margin-left: 5px;">
-                    + Show more
-                </a>
-                {% endif %}
+                    {% if unique_tags.size > 10 %}
+                    <a href="javascript:void(0)" id="toggle-tags-btn" onclick="toggleMoreTags()"
+                       style="font-size: 0.65rem; font-weight: bold; color: #999; text-transform: uppercase; border-bottom: 1px solid #eee; cursor: pointer;">+ More</a>
+                    {% endif %}
+                </div>
             </div>
         </div>
     </div>
 </div>
 
 <script>
-    // Collapses/Expands the tag list
-    function toggleTags() {
-        const hiddenTags = document.querySelectorAll('.hidden-tag');
-        const btn = document.getElementById('toggle-tags-btn');
-        const isCollapsed = hiddenTags[0].style.display === 'none';
+    let postsPerPage = 5;
+    let currentLimit = postsPerPage;
+    let activeTag = 'all';
+    let activeYear = 'all';
 
-        hiddenTags.forEach(tag => {
-            tag.style.display = isCollapsed ? 'inline' : 'none';
+    document.addEventListener("DOMContentLoaded", () => updateVisibility());
+
+    function updateVisibility() {
+        const posts = document.querySelectorAll('.post-item');
+        let matchCount = 0;
+        posts.forEach(p => {
+            const matchesTag = activeTag === 'all' || p.classList.contains(activeTag);
+            const matchesYear = activeYear === 'all' || p.getAttribute('data-year') === activeYear;
+            if (matchesTag && matchesYear) {
+                matchCount++;
+                p.style.display = (matchCount <= currentLimit) ? 'block' : 'none';
+            } else { p.style.display = 'none'; }
         });
-
-        btn.innerText = isCollapsed ? '- Show less' : '+ Show more';
+        const btn = document.getElementById('load-more-btn');
+        if(btn) btn.style.display = (matchCount > currentLimit) ? 'inline-block' : 'none';
     }
 
-    // Handles the post filtering logic
+    function loadMore() {
+        currentLimit += postsPerPage;
+        updateVisibility();
+    }
+
     function filterByTag(tag) {
-        const posts = document.querySelectorAll('.post-item');
-        const links = document.querySelectorAll('.footer-tag-link');
-        const allBtn = document.getElementById('tag-all');
-        const container = document.getElementById('blog-content-area');
+        activeTag = tag; activeYear = 'all'; currentLimit = postsPerPage;
+        updateUI(); updateVisibility();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
 
-        // Prevent page jump by locking height
-        container.style.minHeight = container.offsetHeight + 'px';
+    function filterByYear(year) {
+        activeYear = year; activeTag = 'all'; currentLimit = postsPerPage;
+        updateUI(); updateVisibility();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
 
-        posts.forEach(p => {
-            p.style.display = (tag === 'all' || p.classList.contains(tag)) ? 'block' : 'none';
-        });
+    function resetFilters() {
+        activeTag = 'all'; activeYear = 'all'; currentLimit = postsPerPage;
+        updateUI(); updateVisibility();
+    }
 
-        // UI Feedback: adjust opacity and decoration without breaking weighted font styles
-        links.forEach(l => {
+    function updateUI() {
+        document.querySelectorAll('.footer-tag-link, .year-link').forEach(l => {
             l.style.textDecoration = 'none';
-            l.style.opacity = (tag === 'all' || l.getAttribute('data-tag') === tag) ? '1' : '0.4';
+            l.style.opacity = '0.4';
         });
-
-        allBtn.style.textDecoration = (tag === 'all') ? 'underline' : 'none';
-        allBtn.style.opacity = (tag === 'all') ? '1' : '0.4';
-
-        if (tag !== 'all') {
-            const active = document.querySelector(`[data-tag="${tag}"]`);
-            if (active) {
-                active.style.textDecoration = 'underline';
-                active.style.opacity = '1';
-            }
+        const allBtn = document.getElementById('tag-all');
+        if(allBtn) {
+            const isDefault = activeTag === 'all' && activeYear === 'all';
+            allBtn.style.opacity = isDefault ? '1' : '0.4';
+            allBtn.style.textDecoration = isDefault ? 'underline' : 'none';
         }
+        if (activeTag !== 'all') {
+            const el = document.querySelector(`[data-tag="${activeTag}"]`);
+            if (el) { el.style.textDecoration = 'underline'; el.style.opacity = '1'; }
+        }
+        if (activeYear !== 'all') {
+            const el = document.querySelector(`[data-year="${activeYear}"].year-link`);
+            if (el) { el.style.textDecoration = 'underline'; el.style.opacity = '1'; }
+        }
+    }
 
-        // Snap to top instantly for better UX
-        window.scrollTo({ top: 0, behavior: 'instant' });
+    function toggleMoreTags() {
+        const extra = document.querySelectorAll('.extra-tag');
+        const btn = document.getElementById('toggle-tags-btn');
+        const isHidden = (extra.length > 0 && extra[0].style.display === 'none');
 
-        // Release the height lock
-        setTimeout(() => { container.style.minHeight = 'auto'; }, 100);
+        extra.forEach(t => t.style.display = isHidden ? 'inline' : 'none');
+        btn.innerText = isHidden ? '- Less' : '+ More';
     }
 </script>
-
-{%- else -%}
-<div class="coming-soon" style="text-align: center; padding: 40px;">
-    {%- if current_lang == "pl" -%}
-    <h2>Wkrótce nowe treści</h2>
-    <p>Pracujemy nad polską wersją bloga. Zapraszamy niebawem!</p>
-    {%- else -%}
-    <h2>Coming Soon</h2>
-    <p>New content is on its way. Stay tuned!</p>
-    {%- endif -%}
-</div>
 {%- endif -%}
