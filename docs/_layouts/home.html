@@ -26,16 +26,31 @@ layout: default
     .year-group-wrapper {
         transition: transform 0.3s ease, opacity 0.3s ease;
         cursor: pointer;
-        padding: 5px 10px;
+        padding: 5px 15px;
         text-align: center;
+        position: relative; /* Dodane dla stabilności */
     }
     .year-group-wrapper:hover {
         transform: scale(1.15);
         opacity: 1 !important;
     }
+
+    .month-list {
+        display: flex;
+        justify-content: center;
+        gap: 8px;
+        margin-top: 8px;
+        opacity: 0;
+        transform: translateY(5px);
+        transition: all 0.3s ease;
+        pointer-events: none; /* Domyślnie blokujemy, aby nie przeszkadzało */
+    }
+
+    /* POPRAWKA: Aktywacja klikalności przy hoverze */
     .year-group-wrapper:hover .month-list {
         opacity: 1 !important;
-        pointer-events: auto; /* KLUCZOWE: Pozwala klikać miesiące */
+        pointer-events: auto !important; /* Teraz można klikać! */
+        transform: translateY(0);
     }
 
     /* --- Smart Footer --- */
@@ -67,17 +82,18 @@ layout: default
         transform: translateY(-2px);
     }
 
-    /* Styl dla klikalnych miesięcy */
+    /* Styl dla klikalnych miesięcy - zwiększony padding dla łatwiejszego klikania */
     .month-link {
         text-decoration: none;
         color: #555;
-        padding: 1px 4px;
+        padding: 2px 6px;
         border-radius: 4px;
         transition: all 0.2s;
         display: inline-block;
+        background: rgba(0,0,0,0.03); /* Delikatne tło, żeby było widać, że to przycisk */
     }
     .month-link:hover {
-        background: #000;
+        background: #000 !important;
         color: #fff !important;
     }
 
@@ -153,14 +169,14 @@ layout: default
                         <a href="javascript:void(0)" onclick="filterByYear('{{ year.name }}')" class="year-link" data-year="{{ year.name }}"
                            style="text-decoration: none; color: #333; font-size: 0.9rem; font-weight: 800;">{{ year.name }}</a>
 
-                        <div class="month-list" style="display: flex; gap: 4px; font-size: 0.6rem; font-weight: 600; opacity: 0; transition: opacity 0.3s; pointer-events: none;">
+                        <div class="month-list">
                             {% assign months = year.items | group_by_exp: "p", "p.date | date: '%b'" %}
                             {% for month in months %}
                             <a href="javascript:void(0)"
                                onclick="event.stopPropagation(); filterByMonth('{{ year.name }}', '{{ month.name | downcase }}')"
                                class="month-link">
                                 {{ month.name | downcase }}
-                            </a>{% unless forloop.last %}<span style="color:#eee">.</span>{% endunless %}
+                            </a>
                             {% endfor %}
                         </div>
                     </div>
@@ -235,7 +251,8 @@ layout: default
         posts.forEach(p => {
             const postDateText = p.querySelector('.post-date').innerText.toLowerCase();
             const matchesYear = p.getAttribute('data-year') === year;
-            const matchesMonth = postDateText.includes(month);
+            // Sprawdzenie czy skrót miesiąca jest częścią tekstu daty
+            const matchesMonth = postDateText.includes(month.toLowerCase());
 
             if (matchesYear && matchesMonth) {
                 matchCount++;
@@ -297,8 +314,8 @@ layout: default
             }
         }
         if (activeYear !== 'all') {
-            const el = document.querySelector(`.year-group-wrapper:has([data-year="${activeYear}"])`) ||
-                       document.querySelector(`[data-year="${activeYear}"]`).parentElement;
+            // Bezpieczniejsze szukanie aktywnego roku w UI
+            const el = document.querySelector(`.year-link[data-year="${activeYear}"]`)?.parentElement;
             if (el) { el.style.opacity = '1'; el.style.transform = 'scale(1.15)'; }
         }
     }
