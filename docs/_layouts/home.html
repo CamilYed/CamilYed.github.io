@@ -27,88 +27,63 @@ layout: default
         transition: transform 0.3s ease, opacity 0.3s ease;
         cursor: pointer;
         padding: 5px 10px;
+        text-align: center;
     }
     .year-group-wrapper:hover {
-        transform: scale(1.15); /* Nieco mniejszy zoom, żeby było płynniej */
+        transform: scale(1.15);
         opacity: 1 !important;
     }
     .year-group-wrapper:hover .month-list {
         opacity: 1 !important;
+        pointer-events: auto; /* KLUCZOWE: Pozwala klikać miesiące */
     }
 
-    /* --- NOWE STYLE: Smart Footer --- */
+    /* --- Smart Footer --- */
     #blog-footer-sticky {
-        /* Domyślnie schowany, wystaje tylko uchwyt (30px) */
         transform: translateY(calc(100% - 20px));
         transition: transform 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
     }
-
-    /* Po najechaniu myszką wysuwa się całość */
     #blog-footer-sticky:hover {
         transform: translateY(0);
     }
 
-    /* Uchwyt do wyciągania stopki */
     #footer-handle {
-        width: 100%;
-        height: 20px;
-        position: absolute;
-        top: 0;
-        left: 0;
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        justify-content: center;
+        width: 100%; height: 20px; position: absolute; top: 0; left: 0;
+        cursor: pointer; display: flex; align-items: center; justify-content: center;
         background: transparent;
     }
-
-    /* Pasek graficzny wewnątrz uchwytu */
     #footer-handle::after {
-        content: '';
-        width: 40px;
-        height: 4px;
-        background-color: #ddd;
-        border-radius: 2px;
-        transition: background-color 0.3s;
+        content: ''; width: 40px; height: 4px; background-color: #ddd; border-radius: 2px;
     }
 
-    #blog-footer-sticky:hover #footer-handle::after {
-        background-color: #bbb;
-    }
-
-    /* --- NOWE STYLE: Tagi jako Pastylki (Pills) --- */
+    /* --- Tagi jako Pastylki --- */
     .footer-tag-link {
-        display: inline-block;
-        padding: 4px 12px;
-        margin: 2px;
-        background-color: #f3f4f6; /* Jasne tło */
-        border-radius: 999px;      /* Zaokrąglenie */
-        border: 1px solid transparent;
-        text-decoration: none !important; /* Usunięcie podkreślenia */
-        transition: all 0.2s ease;
+        display: inline-block; padding: 4px 12px; margin: 2px;
+        background-color: #f3f4f6; border-radius: 999px;
+        text-decoration: none !important; transition: all 0.2s ease;
     }
-
     .footer-tag-link:hover {
-        background-color: #000 !important;
-        color: #fff !important;
+        background-color: #000 !important; color: #fff !important;
         transform: translateY(-2px);
-        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
     }
 
-    /* Responsywność footera */
+    /* Styl dla klikalnych miesięcy */
+    .month-link {
+        text-decoration: none;
+        color: #555;
+        padding: 1px 4px;
+        border-radius: 4px;
+        transition: all 0.2s;
+        display: inline-block;
+    }
+    .month-link:hover {
+        background: #000;
+        color: #fff !important;
+    }
+
     @media (max-width: 768px) {
         #footer-grid { grid-template-columns: 1fr !important; gap: 20px !important; }
         #blog-footer-sticky { padding: 10px 0 !important; }
-
-        /* Na mobilkach może być lepiej widoczny mały napis 'Filters' zamiast tylko paska */
-         #footer-handle::before {
-            content: 'FILTERS ▲';
-            font-size: 8px;
-            color: #999;
-            margin-right: 5px;
-            letter-spacing: 1px;
-            font-weight: bold;
-        }
     }
 </style>
 
@@ -160,34 +135,33 @@ layout: default
     <div style="height: 100px; display: block;"></div>
 
     <div id="blog-footer-sticky" style="
-        position: fixed;
-        bottom: 0;
-        left: 0;
-        width: 100%;
-        background: rgba(255, 255, 255, 0.98);
-        backdrop-filter: blur(15px);
-        -webkit-backdrop-filter: blur(15px);
-        border-top: 1px solid #eee;
-        padding: 30px 0 20px 0; /* Zwiększony padding góra na uchwyt */
-        z-index: 9999;
-        box-shadow: 0 -5px 25px rgba(0,0,0,0.08);
+        position: fixed; bottom: 0; left: 0; width: 100%;
+        background: rgba(255, 255, 255, 0.98); backdrop-filter: blur(15px);
+        -webkit-backdrop-filter: blur(15px); border-top: 1px solid #eee;
+        padding: 30px 0 20px 0; z-index: 9999; box-shadow: 0 -5px 25px rgba(0,0,0,0.08);
     ">
         <div id="footer-handle"></div>
 
         <div id="footer-grid" class="post-container" style="max-width: 900px; margin: 0 auto; display: grid; grid-template-columns: 1.5fr 2.5fr; gap: 30px; padding: 0 20px; align-items: start;">
 
-            <div style="overflow: hidden;">
+            <div style="overflow: visible;">
                 <p style="font-size: 0.55rem; font-weight: 800; color: #ccc; text-transform: uppercase; letter-spacing: 1.2px; margin-bottom: 5px;">Archive</p>
-                <div class="archive-scroll-container" style="display: flex; overflow-x: auto; overflow-y: hidden; gap: 15px; padding-bottom: 5px; white-space: nowrap;">
+                <div class="archive-scroll-container" style="display: flex; overflow-x: auto; gap: 15px; padding-bottom: 5px; white-space: nowrap;">
                     {% assign postsByYear = posts | group_by_exp: "post", "post.date | date: '%Y'" %}
                     {% for year in postsByYear %}
                     <div class="year-group-wrapper" style="opacity: 0.7;">
                         <a href="javascript:void(0)" onclick="filterByYear('{{ year.name }}')" class="year-link" data-year="{{ year.name }}"
                            style="text-decoration: none; color: #333; font-size: 0.9rem; font-weight: 800;">{{ year.name }}</a>
 
-                        <div class="month-list" style="display: flex; gap: 3px; font-size: 0.6rem; font-weight: 600; color: #555; opacity: 0; transition: opacity 0.3s;">
+                        <div class="month-list" style="display: flex; gap: 4px; font-size: 0.6rem; font-weight: 600; opacity: 0; transition: opacity 0.3s; pointer-events: none;">
                             {% assign months = year.items | group_by_exp: "p", "p.date | date: '%b'" %}
-                            {% for month in months %}{{ month.name | downcase }}{% unless forloop.last %}.{% endunless %}{% endfor %}
+                            {% for month in months %}
+                            <a href="javascript:void(0)"
+                               onclick="event.stopPropagation(); filterByMonth('{{ year.name }}', '{{ month.name | downcase }}')"
+                               class="month-link">
+                                {{ month.name | downcase }}
+                            </a>{% unless forloop.last %}<span style="color:#eee">.</span>{% endunless %}
+                            {% endfor %}
                         </div>
                     </div>
                     {% endfor %}
@@ -197,9 +171,7 @@ layout: default
             <div style="border-left: 1px solid #f9f9f9; padding-left: 20px;">
                 <p style="font-size: 0.55rem; font-weight: 800; color: #ccc; text-transform: uppercase; letter-spacing: 1.2px; margin-bottom: 8px;">Topics</p>
                 <div style="display: flex; flex-wrap: wrap; gap: 8px; align-items: center;">
-                    <a href="javascript:void(0)" onclick="resetFilters()" id="tag-all"
-                       class="footer-tag-link"
-                       style="background: #000; color: #fff; font-weight: 800;">All</a>
+                    <a href="javascript:void(0)" onclick="resetFilters()" id="tag-all" class="footer-tag-link" style="background: #000; color: #fff; font-weight: 800;">All</a>
 
                     {% capture raw_tags %}{% for post in posts %}{% for tag in post.tags %}{{ tag }}|{% endfor %}{% endfor %}{% endcapture %}
                     {% assign tag_array = raw_tags | split: "|" | sort %}
@@ -210,18 +182,13 @@ layout: default
                     <a href="javascript:void(0)" onclick="filterByTag('{{ tag | slugify }}')"
                        class="footer-tag-link {% if forloop.index > 15 %}extra-tag{% endif %}"
                        data-tag="{{ tag | slugify }}"
-                       style="
-                              color: {% if count > 1 %}#222{% else %}#555{% endif %};
-                              font-size: 0.75rem;
-                              font-weight: {% if count > 1 %}700{% else %}400{% endif %};
-                              {% if forloop.index > 15 %}display: none;{% endif %}">
+                       style="color: {% if count > 1 %}#222{% else %}#555{% endif %}; font-size: 0.75rem; font-weight: {% if count > 1 %}700{% else %}400{% endif %}; {% if forloop.index > 15 %}display: none;{% endif %}">
                         {{ tag }}
                     </a>
                     {% endfor %}
 
                     {% if unique_tags.size > 15 %}
-                    <a href="javascript:void(0)" id="toggle-tags-btn" onclick="toggleMoreTags()"
-                       style="font-size: 0.6rem; font-weight: bold; color: #bbb; text-transform: uppercase; cursor: pointer; padding: 4px 8px; background: #fff; border: 1px solid #eee; border-radius: 99px;">+</a>
+                    <a href="javascript:void(0)" id="toggle-tags-btn" onclick="toggleMoreTags()" style="font-size: 0.6rem; font-weight: bold; color: #bbb; cursor: pointer; padding: 4px 8px; background: #fff; border: 1px solid #eee; border-radius: 99px;">+</a>
                     {% endif %}
                 </div>
             </div>
@@ -257,6 +224,34 @@ layout: default
         updateVisibility();
     }
 
+    function filterByMonth(year, month) {
+        activeYear = year;
+        activeTag = 'all';
+        currentLimit = postsPerPage;
+
+        const posts = document.querySelectorAll('.post-item');
+        let matchCount = 0;
+
+        posts.forEach(p => {
+            const postDateText = p.querySelector('.post-date').innerText.toLowerCase();
+            const matchesYear = p.getAttribute('data-year') === year;
+            const matchesMonth = postDateText.includes(month);
+
+            if (matchesYear && matchesMonth) {
+                matchCount++;
+                p.style.display = (matchCount <= currentLimit) ? 'block' : 'none';
+            } else {
+                p.style.display = 'none';
+            }
+        });
+
+        const btn = document.getElementById('load-more-btn');
+        if(btn) btn.style.display = (matchCount > currentLimit) ? 'inline-block' : 'none';
+
+        updateUI();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
     function filterByTag(tag) {
         activeTag = tag; activeYear = 'all'; currentLimit = postsPerPage;
         updateUI(); updateVisibility();
@@ -275,9 +270,7 @@ layout: default
     }
 
     function updateUI() {
-        // Reset styli dla wszystkich
         document.querySelectorAll('.footer-tag-link').forEach(l => {
-            // Przywracamy styl domyślny pastylki
             l.style.backgroundColor = '#f3f4f6';
             l.style.color = '#555';
             l.style.opacity = '1';
@@ -298,7 +291,6 @@ layout: default
         if (activeTag !== 'all') {
             const el = document.querySelector(`[data-tag="${activeTag}"]`);
             if (el) {
-                // Styl aktywnej pastylki
                 el.style.backgroundColor = '#000';
                 el.style.color = '#fff';
                 el.style.fontWeight = '800';
