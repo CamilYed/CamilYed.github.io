@@ -5,7 +5,7 @@ lang: pl
 ref: modern-testing-practices
 date: 2026-01-25
 tags: [ java, testing, spring-boot, clean-code ]
-permalink: /pl/testy-ktore-nie-klama/
+permalink: /pl/testy-ktore-nie-klamia/
 ---
 
 W tym artykule chcę się podzielić jak podchodzę do pisania testów, które nie są wyłącznie po to aby pokryć tzw.
