@@ -22,7 +22,7 @@ naprawdę postarać się zrozumieć, co one faktycznie testują, nie ufając nad
 
 ### 1. Struktura Given-When-Then
 
-Spójrzmy na pierwszy przykład, który nie jest wcale rozbudowany, ale już na wstępie sprawia, że trzeba nie co bardziej
+Spójrzmy na pierwszy przykład, który nie jest wcale rozbudowany, ale już na wstępie sprawia, że trzeba nieco bardziej
 się wysilić, aby wyłuskać to, co jest na wejściu testu — input, co testujemy — zachowanie, oraz co na końcu sprawdzamy —
 asercja.
 
@@ -132,6 +132,7 @@ W kolejnych sekcjach zobaczymy, jak za pomocą wzorców takich jak Test Data Bui
 sprawić, że ten sam test będzie wyglądał niemal jak zdania w języku naturalnym.
 
 ---
+
 ### 2. Test Data Builder
 
 Wróćmy do naszego „smutnego kodzika” z sekcji wyżej. Dlaczego on tak naprawdę kuje w oczy? Bo za każdym razem, gdy
@@ -186,7 +187,8 @@ punktu widzenia logiki biznesowej deaktywacji, powinny zostać ukryte.
 
 Właśnie tutaj z pomocą przychodzi `Test Data Builder`. Pozwala on na zdefiniowanie sensownych, domyślnych wartości dla
 wszystkich wymaganych pól w jednym miejscu. Co więcej, możemy pójść krok dalej i zastosować kompozycję builderów. Jeśli
-nasz `User` posiada `Address`, a adres nas w danym teście nie interesuje – builder użytkownika po prostu użyje domyślnego
+nasz `User` posiada `Address`, a adres nas w danym teście nie interesuje – builder użytkownika po prostu użyje
+domyślnego
 buildera adresu.
 
 Spójrzmy na implementację:
@@ -195,7 +197,7 @@ Spójrzmy na implementację:
 public class UserBuilder {
     private String name = "Jan";
     private String lastName = "Kowalski";
-    private String status = "Active";
+    private String status = "Inactive";
     private String role = "USER";
     private String deactivationReason = null;
     private AddressBuilder addressBuilder = AddressBuilder.anAddress();
@@ -261,8 +263,8 @@ void shouldDeactivateAdminUserAndLogEvent() {
     var user = aUser()
             .withRole("ADMIN")
             .build();
-    
-   // reszta kodu...
+
+    // reszta kodu...
 }
 ```
 
@@ -270,6 +272,7 @@ Jak widać, ukryliśmy cały nieistotny szum informacyjny w sekcji given, gdzie 
 to ona ma znaczenie w tym teście.
 
 ---
+
 ### 3. Asercje-najczęstsze błędy
 
 Mając już idealnie przygotowane dane wejściowe, musimy zadbać o to, by wynik testu faktycznie o czymś nas informował.
@@ -359,37 +362,56 @@ Często w sekcji `// then` spotykam kod, który próbuje weryfikować stan syste
 jasnego sygnału, mamy tam logikę, pętle i ręczne wyciąganie danych.
 
 ☹️ **Smutny kodzik:**
+
 ```java
 // then
 var logs = auditRepository.findByUserId(user.getId());
 
 // Musimy sprawdzić czy w ogóle coś przyszło
 assertNotNull(logs);
-assertEquals(3, logs.size());
+
+assertEquals(3,logs.size());
 
 // Szukamy konkretnego loga deaktywacji wśród wielu innych
 AuditLog deactivationLog = null;
-for (AuditLog log : logs) {
-    if ("USER_DEACTIVATED".equals(log.getEventName())) {
-        deactivationLog = log;
+for(
+AuditLog log :logs){
+        if("USER_DEACTIVATED".
+
+equals(log.getEventName())){
+deactivationLog =log;
     }
-}
+            }
 
 // Sprawdzamy szczegóły - masa technicznych asercji
 assertNotNull(deactivationLog, "Log deaktywacji powinien istnieć!");
-assertEquals("PROCESSED", deactivationLog.getStatus());
-assertEquals("AUTH_SERVICE", deactivationLog.getSystemName());
-assertEquals("ADMIN_123", deactivationLog.getActorId());
-assertTrue(deactivationLog.getTimestamp().isAfter(LocalDateTime.now().minusMinutes(1)));
+
+assertEquals("PROCESSED",deactivationLog.getStatus());
+
+assertEquals("AUTH_SERVICE",deactivationLog.getSystemName());
+
+assertEquals("ADMIN_123",deactivationLog.getActorId());
+
+assertTrue(deactivationLog.getTimestamp().
+
+isAfter(LocalDateTime.now().
+
+minusMinutes(1)));
 
 // I jeszcze sprawdzamy stan pozostałych logów
-logs.forEach(l -> assertEquals("SUCCESS", l.getDeliveryStatus()));
+        logs.
+
+forEach(l ->
+
+assertEquals("SUCCESS",l.getDeliveryStatus()));
 ```
+
 Czemu takie podejście uważam, za złe?
 
 1. Pętla w teście: Jeśli masz for lub if w teście, to de facto piszesz algorytm. A algorytmy bywają błędne. Czy teraz
    potrzebujemy testu do testu?
-2. Niskopoziomowe detale: Czytając to, musisz, analizować jak działa `for`, jak porównujemy Stringi i czy `assertNotNull`
+2. Niskopoziomowe detale: Czytając to, musisz, analizować jak działa `for`, jak porównujemy Stringi i czy
+   `assertNotNull`
    jest w dobrym miejscu. Intencja biznesowa ("użytkownik został zdeaktywowany i odnotowano to w audycie") ginie w
    gąszczu technicznych instrukcji.
 3. Efekt domina: Jeśli zmieni się struktura loga, musisz poprawić te 15 linii kodu w każdym teście, który go sprawdza.
@@ -415,7 +437,7 @@ public class UserAssert extends AbstractAssert<UserAssert, User> {
 ```
 
 Dodatkową zaletą jest bardziej precyzyjny komunikat, kiedy asercja się załamuje, nie dostaniemy ogólnego nic
-niemówiącego nam tekstu jak `expected true but was fale`, ale np.
+niemówiącego nam tekstu jak `expected true but was false`, ale np.
 `Expected logs to contain 'USER_DEACTIVATED' but found ['INITIAL_CREATION', 'LOGIN_SUCCESS']`
 
 Przykład użycia:
@@ -423,13 +445,22 @@ Przykład użycia:
 ```java
 // then
 assertThat(user)
-    .isDeactivated()
-    .hasAuditLog("USER_DEACTIVATED")
-    .isProcessedBy("AUTH_SERVICE")
-    .issuedBy("ADMIN_123");
+    .
+
+isDeactivated()
+    .
+
+hasAuditLog("USER_DEACTIVATED")
+    .
+
+isProcessedBy("AUTH_SERVICE")
+    .
+
+issuedBy("ADMIN_123");
 ```
 
 ---
+
 ### 5. Domain Specific Language
 
 Czy możemy pójść jeszcze dalej i spróbować doprowadzić do tego, aby test przypomniał faktyczne wymagania biznesowe,
@@ -442,7 +473,8 @@ wymaganiach spisanych np. na `Confluence`.
 #### 5.1 Interfejs z domyślną implementacją jako podstawowy building block
 
 Zamiast wołać repozytorium, test "ma zdolność" zarządzania użytkownikami. Wykorzystamy do tego Interfejsy-Zdolności (
-`Abilities`). Pozwalają one "wstrzykiwać" zachowania do testu bez zaśmiecania go adnotacjami @`Autowired` czy technicznym
+`Abilities`). Pozwalają one "wstrzykiwać" zachowania do testu bez zaśmiecania go adnotacjami @`Autowired` czy
+technicznym
 kodem infrastruktury.
 
 ```java
@@ -478,7 +510,7 @@ class UserDeactivationTest implements UserAbility, AuditAbility {
     void shouldDeactivateAdminUserAndLogEvent() {
         // given
         var admin = thereIs(aUser().withRole("ADMIN").withStatus("Active"));
-        
+
         // and
         thereIsAnInitialLogFor(admin);
 
@@ -492,13 +524,14 @@ class UserDeactivationTest implements UserAbility, AuditAbility {
                 .hasAuditLog("STATUS_CHANGE")
                 .isProcessedBy("AUTH_SERVICE");
     }
-    
+
 }
 ```
 
 A o to, jak można łatwo w Springu wyciągać beany w testach na potrzeby np. interfejsów `Ability`
 
 ```java
+
 @Component
 public class TestBeanProvider implements ApplicationContextAware {
     private static ApplicationContext context;
@@ -514,7 +547,12 @@ public class TestBeanProvider implements ApplicationContextAware {
 }
 ```
 
+Warto pamiętać, że powyższe rozwiązanie oparte na kontekście Springa dedykowane jest dla testów integracyjnych. W
+czystych testach jednostkowych (Unit Tests) interfejsy Ability mogą po prostu przyjmować zależności w konstruktorze lub
+korzystać z implementacji In-Memory, o których opowiem w kolejnej części.
+
 ---
+
 #### 5.3 Co zyskujemy dzięki takiej abstrakcji?
 
 Powyższy test nie jest już kodem, który zrozumie tylko programista, a czytelnym opisem zachowania systemu. Wyjście na
@@ -525,7 +563,8 @@ ten poziom abstrakcji niesie ze sobą konkretne korzyści architektoniczne:
   testu nadal będzie poprawnie weryfikować system.
 
 - Ochrona przed nieaktualną dokumentacją: Dokumentacja na Confluence czy w Jirze starzeje się w sekundę po zamknięciu
-  zadania. Test napisany w ten sposób to `Executable Specification` – specyfikacja, która nie może kłamać, bo jeśli przestanie
+  zadania. Test napisany w ten sposób to `Executable Specification` – specyfikacja, która nie może kłamać, bo jeśli
+  przestanie
   być aktualna, system po prostu nie przejdzie procesu `CI/CD`.
 
 - Szybszy Onboarding: Nowy programista w zespole nie musi analizować, jakie repozytoria i serwisy są potrzebne, by
@@ -536,6 +575,7 @@ ten poziom abstrakcji niesie ze sobą konkretne korzyści architektoniczne:
   admin", "User is deactivated" – to terminy, które rozumie każdy, nie tylko deweloperzy.
 
 ---
+
 ### Podsumowanie (Część 1)
 
 Dobra kultura testowania to nie tylko wysoki procent w raporcie pokrycia kodu. To przede wszystkim zaufanie do własnego
@@ -564,13 +604,15 @@ W kolejnej części porozmawiamy o:
 - **Cisi zabójcy wydajności:** Czyli dlaczego adnotacje `@DirtiesContext` i `@SpyBean `to zło, które sprawia, że Spring
   przeładowuje kontekst w kółko i build nagle się wydłuża.
 
-- **Panowanie nad czasem:** Jak przestać walczyć z `LocalDateTime.now()` i zacząć używać własnego `Clock Providera`, żeby
+- **Panowanie nad czasem:** Jak przestać walczyć z `LocalDateTime.now()` i zacząć używać własnego `Clock Providera`,
+  żeby
   testy dat były przewidywalne.
 
 - **Asynchroniczność:** Jak pozbyć się `Thread.sleep()` i zastąpić go przez `Awaitility`, żeby test nie czekał ani
   sekundy za długo i był bardziej kuloodporny na kwestię upływu czasu.
 
-- **Izolacja i brak stanu**: Dlaczego używam `Database Cleanera` zamiast adnotacji `@Transactional` na klasach testowych.
+- **Izolacja i brak stanu**: Dlaczego używam `Database Cleanera` zamiast adnotacji `@Transactional` na klasach
+  testowych.
 
 - **Infrastruktura**: Krótki wstęp do Testcontainers i Wiremock, czyli jak testować z prawdziwą bazą i API bez udawania,
   że "u mnie na H2 działa".
