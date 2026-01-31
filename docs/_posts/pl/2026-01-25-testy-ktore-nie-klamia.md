@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "Czego nauczyłem się po latach na temat testów? Moje subiektywne Best Practices cz. 1"
+title: "Testy, które nie kłamią cz. 1: Czytelność i DSL"
 lang: pl
 ref: modern-testing-practices
 date: 2026-01-25
