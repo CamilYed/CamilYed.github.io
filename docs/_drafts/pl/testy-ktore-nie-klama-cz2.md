@@ -14,7 +14,7 @@ połowa sukcesu. Możesz mieć najpiękniej napisaną sekcję Given-When-Then, k
 Dziś pogadamy o zaufaniu do naszych testów. Bo najgorszy rodzaj testu to taki, który daje Ci poczucie bezpieczeństwa,
 mimo że Twój kod pod spodem robi zupełnie coś innego, na co by wskazywał sam test.
 
-## 1. Pułapka testowania implementacji (White Box)
+### 1. Pułapka testowania implementacji (White Box)
 
 Zauważyłem, że w wielu projektach Mockito dodaje się do testów "z automatu". Generujemy klasę testową, mockujemy
 wszystkie zależności w konstruktorze i cyk – robota zrobiona. Mało kto zadaje sobie wtedy pytanie: **po co ja właściwie
@@ -73,8 +73,8 @@ void shouldSaveUserWithDefaultRole_CaptorVersion() {
 }
 ```
 
-I co? Sukces? No nie do końca. Właśnie weszliśmy w tryb `White Box Testing`, odsłaniamy szczegóły implementacji
-co powoduje, że nie testujemy kodu jako czarnej skrzynki - coś było na wejściu, coś się zadziało i coś mamy na wyjściu.
+I co? Sukces? No nie do końca. Właśnie weszliśmy w tryb `White Box Testing`, odsłaniamy szczegóły implementacji,
+co powoduje, że nie testujemy kodu jako czarnej skrzynki — coś było na wejściu, coś się zadziało i coś mamy na wyjściu.
 Znowu nasze testy stają się kruche (`Fragile tests`).
 
 Podsumowując, krótko czemu to jest pułapka:
@@ -87,3 +87,84 @@ Podsumowując, krótko czemu to jest pułapka:
   chcemy mieć przetestowany.
 - Sonar kłamie: Narzędzia do pokrycia kodu (`Code Coverage`) pokazują, że "przetestowałeś" te linie. Ale Ty ich nie
   przetestowałeś – Ty je tylko wywołałeś w kontrolowanym, sztucznym środowisku.
+
+#### Rozwiązanie: Implementacje In-Memory
+
+Zamiast walczyć z Mockito i pisać kolejne captory, lepiej potraktować serwis jako czarną skrzynkę. Coś wchodzi, coś
+wychodzi, a stan systemu się zmienia. Aby to zrobić w teście jednostkowym, potrzebujemy czegoś, co udaje bazę danych,
+ale działa w pamięci.
+
+Użycie ConcurrentHashMap pod spodem repozytorium to najprostszy i najskuteczniejszy sposób.
+
+```java
+public class InMemoryUserRepository implements UserRepository {
+    private final Map<Long, User> db = new ConcurrentHashMap<>();
+    private final AtomicLong sequence = new AtomicLong(1);
+
+    @Override
+    public User save(User user) {
+        if (user.getId() == null) {
+            // Symulujemy generowanie ID przez bazę
+            user.setId(sequence.getAndIncrement());
+        }
+        db.put(user.getId(), user);
+        return user;
+    }
+
+    @Override
+    public Optional<User> findById(Long id) {
+        return Optional.ofNullable(db.get(id));
+    }
+
+    public void clear() {
+        db.clear();
+    }
+}
+```
+
+**Test, który faktycznie sprawdza zachowanie:**
+Teraz nasz test nie potrzebuje żadnych verify ani ArgumentCaptor. Po prostu wywołujemy akcję i sprawdzamy efekt końcowy.
+
+```java
+class UserServiceTest {
+
+    private final InMemoryUserRepository userRepository = new InMemoryUserRepository();
+    private final UserService userService = new UserService(userRepository);
+
+    @BeforeEach
+    void setUp() {
+        userRepository.clear();
+    }
+
+    @Test
+    void shouldRegisterUserWithDefaultRole() {
+        // given
+        var user = new User("Jan");
+
+        // when
+        userService.register(user);
+
+        // then
+        var savedUser = userRepository.findById(user.getId()).orElseThrow();
+        assertThat(savedUser.getRole()).isEqualTo(Role.USER);
+    }
+}
+```
+
+**Czy to nadal White Box?**
+
+Ktoś mógłby zapytać: "Zaraz, ale w asercji nadal wywołuję repozytorium (findById), więc mój test wie o tym, co serwis ma
+w środku. Czy to nie jest znowu White Box?".
+
+Nie. Różnica jest fundamentalna i sprowadza się do dwóch pojęć: `State-based testing` (testowanie stanu) oraz
+`Interaction-based testing` (testowanie interakcji).
+
+- W Mockito (Interakcja): Pytasz: "Drogi serwisie, czy zawołałeś metodę save dokładnie raz z takimi parametrami?". Jeśli
+  programista zmieni save() na saveAll(), Twój test wybuchnie, mimo że system działa poprawnie.
+
+- W In-Memory (Stan): Pytasz: "Systemie, nieważne jak to zrobiłeś, po prostu powiedz mi, czy ten użytkownik u Ciebie
+  jest i czy ma nadaną rolę?".
+
+W podejściu `Black Box `traktujemy parę Service + InMemoryRepo jako jedną, spójną czarną skrzynkę. Nie obchodzi nas, ile
+razy serwis "gadał" z repozytorium. Obchodzi nas tylko to, czy na końcu dnia dane w systemie się zgadzają.
+
