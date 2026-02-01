@@ -20,31 +20,34 @@ Zauważyłem, że w wielu projektach Mockito dodaje się do testów "z automatu"
 wszystkie zależności i cyk – robota zrobiona. Mało kto zadaje sobie wtedy pytanie: **po co ja właściwie tego mocka
 używam?**
 
-Wyobraź sobie prosty serwis, który przed zapisem użytkownika do bazy ma mu nadać domyślną rolę.
+Wyobraź sobie prosty serwis do aktualizacji danych użytkownika.
 
 ☹️ **Smutny kodzik:**
 
 ```java
 
 @Test
-void shouldSaveUserWithDefaultRole() {
+void shouldUpdateUserName() {
     // given
-    var user = new User("Jan");
-    when(userRepository.save(any())).thenReturn(user);
+    var userId = 1L;
+    var user = new User(userId, "Jan");
+    // Musimy "nakarmić" mocka, żeby test w ogóle ruszył
+    when(userRepository.findById(userId)).thenReturn(Optional.of(user));
 
     // when
-    userService.register(user);
+    userService.updateName(userId, "Jan Kowalski");
 
     // then
     // Sprawdzamy tylko techniczne wywołanie metody. 
-    // Czy wiemy, czy rola faktycznie została przypisana w obiekcie przed zapisem? 
-    // Ten test powie "TAK", nawet jeśli serwis przekaże do save() pusty obiekt.
+    // Czy wiemy, czy imię faktycznie zostało zmienione w obiekcie przed zapisem? 
+    // Ten test powie "TAK", nawet jeśli serwis wyśle do save() stare dane.
     verify(userRepository).save(any(User.class));
 }
 ```
 
-Ten test Cię oszukuje. Sprawdza tylko, czy zawołano metodę save. Jeśli programista usunie linię przypisującą rolę, test
-nadal przejdzie! Zamiast testować zachowanie biznesowe, testujesz techniczne wywołanie biblioteki.
+Ten test Cię oszukuje. Sprawdza tylko, czy zawołano metodę save. Jeśli programista pomyli pola i w kodzie produkcyjnym
+przypisze nową wartość do zupełnie innego pola (albo w ogóle pominie przypisanie), ten test nadal przejdzie na zielono!
+Zamiast testować zachowanie biznesowe (zmiana imienia), testujesz techniczne wywołanie biblioteki.
 
 No dobra, ale ktoś zauważy, że możemy jednak zweryfikować stan obiektu i spróbuje użyć `ArgumentCaptor` przy logice
 aktualizacji danych (update).
@@ -74,9 +77,10 @@ void shouldUpdateUserName_CaptorVersion() {
 }
 ```
 
-I co? Sukces? No nie do końca. Właśnie weszliśmy w tryb `White Box Testing.` Testy stają się kruche (Fragile tests), bo:
+I co? Sukces? No nie do końca. Właśnie weszliśmy w tryb `White Box Testing.` Testy stają się kruche (`Fragile tests`),
+bo:
 
-- Refaktoryzacja to ból: Zmieniasz save() na saveAll()? Test wybucha, mimo że logika biznesowa działa.
+- Refaktoryzacja to ból: Zmieniasz `save()` na `saveAll()`? Test wybucha, mimo że logika biznesowa działa.
 - Testujesz "jak", a nie "co": Obchodzi Cię, czy wywołałeś konkretną linię kodu, a nie jaki jest wynik dla użytkownika.
 - Sonar kłamie: Raporty pokazują pokrycie linii, ale Ty ich nie przetestowałeś – Ty je tylko wywołałeś w sztucznym
   środowisku.
@@ -145,7 +149,7 @@ wywoływać userRepository.save() w sekcji given, użyjemy naszej "zdolności" (
 ```java
 
 @Test
-void shouldUpdateUserName {
+void shouldUpdateUserName() {
     // given
     thereIsAUser(anUser().withId(1L).withName("Jan").build());
 
@@ -198,7 +202,7 @@ public abstract class BaseUnitTest implements UserAbility {
 
     @BeforeEach
     void clearDatabase() {
-        userRepository.clear(); // Każdy test zaczyna z czystą kartą
+        userRepository.clear(); // Ważne aby izolować testy czyścimy stan bazy w pamięci przed każdym
     }
 }
 ```
@@ -227,3 +231,30 @@ class UserServiceTest extends BaseUnitTest {
     }
 }
 ```
+
+### Podsumowanie
+
+Stosując połączenie In-Memory, Ability oraz Base Class (nasza klasa `BaseUnitTest`), przestajemy walczyć z narzędziami,
+a zaczynamy wspierać proces dostarczania wartości. Udało nam się osiągnąć trzy kluczowe cele:
+
+- **Izolacja**: Dzięki `@BeforeEach` w klasie bazowej każdy test startuje z pustą bazą. Eliminuje
+  to błędy wynikające z wyciekania danych między testami, co jest zmorą dużych zestawów testowych.
+- **Jedno źródło prawdy**: Zarówno `thereIsAUser` (Given), `userService.updateName` (When), jak i asercja (Then) operują
+  na tej samej instancji `InMemoryUserRepository`. Nie musisz niczego konfigurować ręcznie – to, co zapiszesz w Given,
+  jest fizycznie dostępne w When i weryfikowalne w Then.
+- **Łatwiejszy debug**: Największą różnicę odczujesz, gdy test... nie przejdzie. W świecie Mockito często kończysz z
+  enigmatycznym komunikatem Wanted but not invoked. Tutaj, zamiast debugować czeluści frameworka, po prostu stawiasz
+  breakpoint w metodzie `updateName` i robisz Step Into.
+
+
+### Co dalej?
+
+Mamy już unity, które działają błyskawicznie i nie kłamią. W kolejnej części zajmiemy się testami integracyjnymi.
+
+Dowiesz się:
+
+- Jak nie wpaść w pułapkę przeładowywania niepotrzebnie kontekstu Springa i dlaczego adnotacja `@DirtiesContext` to
+  jednak raczej Twój wróg niż przyjaciel.
+- Dlaczego `@SpyBean` to zaproszenie do kłopotów i jak go unikać.
+- Jak zaprząc `Testcontainers` do pracy tak, aby testy integracyjne były niemal tak przyjemne i stabilne, jak nasze
+  dzisiejsze unity.
