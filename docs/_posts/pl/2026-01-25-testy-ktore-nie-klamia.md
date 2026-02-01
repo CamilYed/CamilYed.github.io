@@ -292,9 +292,8 @@ var user = aUser().withName(expectedName).build();
 
 // dalszy kod testu ...
 
-assertThat(result.getName()).
-
-isEqualTo(expectedName); // ...test nadal przejdzie!
+assertThat(result.getName()).isEqualTo(expectedName); 
+// ...test nadal przejdzie!
 ```
 
 Aby uodpornić powyższy kod na możliwe wystąpienie takiej sytuacji, wystarczy użyć literałów tekstowych.
@@ -306,9 +305,7 @@ var user = aUser().withName("Jan").build();
 
 // dalszy kod testu ...
 
-assertThat(result.getName()).
-
-isEqualTo("Jan");
+assertThat(result.getName()).isEqualTo("Jan");
 ```
 
 #### 3.2 Klasy DTO w asercjach
@@ -369,41 +366,25 @@ var logs = auditRepository.findByUserId(user.getId());
 
 // Musimy sprawdzić czy w ogóle coś przyszło
 assertNotNull(logs);
-
-assertEquals(3,logs.size());
+assertEquals(3, logs.size());
 
 // Szukamy konkretnego loga deaktywacji wśród wielu innych
 AuditLog deactivationLog = null;
-for(
-AuditLog log :logs){
-        if("USER_DEACTIVATED".
-
-equals(log.getEventName())){
-deactivationLog =log;
+for (AuditLog log : logs) {
+    if ("USER_DEACTIVATED".equals(log.getEventName())) {
+        deactivationLog = log;
     }
-            }
+}
 
 // Sprawdzamy szczegóły - masa technicznych asercji
 assertNotNull(deactivationLog, "Log deaktywacji powinien istnieć!");
-
-assertEquals("PROCESSED",deactivationLog.getStatus());
-
-assertEquals("AUTH_SERVICE",deactivationLog.getSystemName());
-
-assertEquals("ADMIN_123",deactivationLog.getActorId());
-
-assertTrue(deactivationLog.getTimestamp().
-
-isAfter(LocalDateTime.now().
-
-minusMinutes(1)));
+assertEquals("PROCESSED", deactivationLog.getStatus());
+assertEquals("AUTH_SERVICE", deactivationLog.getSystemName());
+assertEquals("ADMIN_123", deactivationLog.getActorId());
+assertTrue(deactivationLog.getTimestamp().isAfter(LocalDateTime.now().minusMinutes(1)));
 
 // I jeszcze sprawdzamy stan pozostałych logów
-        logs.
-
-forEach(l ->
-
-assertEquals("SUCCESS",l.getDeliveryStatus()));
+logs.forEach(l -> assertEquals("SUCCESS", l.getDeliveryStatus()));
 ```
 
 Czemu takie podejście uważam, za złe?
@@ -445,18 +426,10 @@ Przykład użycia:
 ```java
 // then
 assertThat(user)
-    .
-
-isDeactivated()
-    .
-
-hasAuditLog("USER_DEACTIVATED")
-    .
-
-isProcessedBy("AUTH_SERVICE")
-    .
-
-issuedBy("ADMIN_123");
+.isDeactivated()
+.hasAuditLog("USER_DEACTIVATED")
+.isProcessedBy("AUTH_SERVICE") 
+.issuedBy("ADMIN_123");
 ```
 
 ---
