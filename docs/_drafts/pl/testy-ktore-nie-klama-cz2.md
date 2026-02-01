@@ -17,8 +17,8 @@ mimo że Twój kod pod spodem robi zupełnie coś innego, na co by wskazywał sa
 ### 1. Pułapka testowania implementacji (White Box)
 
 Zauważyłem, że w wielu projektach Mockito dodaje się do testów "z automatu". Generujemy klasę testową, mockujemy
-wszystkie zależności w konstruktorze i cyk – robota zrobiona. Mało kto zadaje sobie wtedy pytanie: **po co ja właściwie
-tego mocka używam**?
+wszystkie zależności i cyk – robota zrobiona. Mało kto zadaje sobie wtedy pytanie: **po co ja właściwie tego mocka
+używam?**
 
 Wyobraź sobie prosty serwis, który przed zapisem użytkownika do bazy ma mu nadać domyślną rolę.
 
@@ -30,7 +30,6 @@ Wyobraź sobie prosty serwis, który przed zapisem użytkownika do bazy ma mu na
 void shouldSaveUserWithDefaultRole() {
     // given
     var user = new User("Jan");
-    // Mockujemy repozytorium
     when(userRepository.save(any())).thenReturn(user);
 
     // when
@@ -44,69 +43,55 @@ void shouldSaveUserWithDefaultRole() {
 }
 ```
 
-Przecież, tak naprawdę ten test Cię oszukuje. sprawdza tylko czy zawołaną metodę `save`. Jeśli usuniesz w kodzie linie
-odpowiadającą za przypisane roli, to ten test nadal przejdzie! Mcckito przyjmie cokolwiek, co mu przekażesz.
-Zamiast testować zachowanie biznesowe (użytkownik ma mieć rolę), testujesz techniczne wywołanie biblioteki.
+Ten test Cię oszukuje. Sprawdza tylko, czy zawołano metodę save. Jeśli programista usunie linię przypisującą rolę, test
+nadal przejdzie! Zamiast testować zachowanie biznesowe, testujesz techniczne wywołanie biblioteki.
 
-No dobra, ale ktoś zauważy, że możemy jednak zweryfikować przypisanie roli i wtedy spróbuje użyć kolejnych features,
-które
-oferuje Mockito np. `ArgumentCaptor`.
+No dobra, ale ktoś zauważy, że możemy jednak zweryfikować stan obiektu i spróbuje użyć `ArgumentCaptor` przy logice
+aktualizacji danych (update).
 
-☹️ **Jeszcze bardziej smutny kodzik:**
+☹️ Jeszcze bardziej smutny kodzik:
 
 ```java
 
 @Test
-void shouldSaveUserWithDefaultRole_CaptorVersion() {
+void shouldUpdateUserName_CaptorVersion() {
     // given
-    var user = new User("Jan");
+    var userId = 1L;
+    var existingUser = new User(userId, "Jan");
     var userCaptor = ArgumentCaptor.forClass(User.class);
 
+    when(userRepository.findById(userId)).thenReturn(Optional.of(existingUser));
+
     // when
-    userService.register(user);
+    userService.updateName(userId, "Jan Kowalski");
 
     // then
+    // Tutaj zaczynają się schody. Odsłaniamy szczegóły implementacji.
     verify(userRepository).save(userCaptor.capture());
     var savedUser = userCaptor.getValue();
 
-    assertThat(savedUser.getRole()).isEqualTo(Role.USER);
+    assertThat(savedUser.getName()).isEqualTo("Jan Kowalski");
 }
 ```
 
-I co? Sukces? No nie do końca. Właśnie weszliśmy w tryb `White Box Testing`, odsłaniamy szczegóły implementacji,
-co powoduje, że nie testujemy kodu jako czarnej skrzynki — coś było na wejściu, coś się zadziało i coś mamy na wyjściu.
-Znowu nasze testy stają się kruche (`Fragile tests`).
+I co? Sukces? No nie do końca. Właśnie weszliśmy w tryb `White Box Testing.` Testy stają się kruche (Fragile tests), bo:
 
-Podsumowując, krótko czemu to jest pułapka:
+- Refaktoryzacja to ból: Zmieniasz save() na saveAll()? Test wybucha, mimo że logika biznesowa działa.
+- Testujesz "jak", a nie "co": Obchodzi Cię, czy wywołałeś konkretną linię kodu, a nie jaki jest wynik dla użytkownika.
+- Sonar kłamie: Raporty pokazują pokrycie linii, ale Ty ich nie przetestowałeś – Ty je tylko wywołałeś w sztucznym
+  środowisku.
 
-- Refaktoryzacja to ból: Zmieniasz nazwę metody w repozytorium albo zamiast `save()` używasz `saveAll()`? Twój test
-  wybucha, mimo że logika biznesowa (nadanie roli) nadal działa poprawnie.
-- Testujesz "jak", a nie "co": Twojego testu nie obchodzi wynik. Obchodzi go to, czy wywołałeś konkretną linię kodu,
-  gdzieś głęboko w wewnątrz serwisu. To sprawia, że testy odkrywają szczegóły implementacyjne, przesłaniając tym samym,
-  co chcemy przetestować, powodując, że musisz skupiać się na wewnętrznych szczegółach zamiast na celu biznesowym, jaki
-  chcemy mieć przetestowany.
-- Sonar kłamie: Narzędzia do pokrycia kodu (`Code Coverage`) pokazują, że "przetestowałeś" te linie. Ale Ty ich nie
-  przetestowałeś – Ty je tylko wywołałeś w kontrolowanym, sztucznym środowisku.
+#### Rozwiązanie: Implementacja In-Memory
 
-#### Rozwiązanie: Implementacje In-Memory
-
-Zamiast walczyć z Mockito i pisać kolejne captory, lepiej potraktować serwis jako czarną skrzynkę. Coś wchodzi, coś
-wychodzi, a stan systemu się zmienia. Aby to zrobić w teście jednostkowym, potrzebujemy czegoś, co udaje bazę danych,
-ale działa w pamięci.
-
-Użycie ConcurrentHashMap pod spodem repozytorium to najprostszy i najskuteczniejszy sposób.
+Zamiast walczyć z Mockito, potraktujmy serwis jako czarną skrzynkę. Potrzebujemy czegoś, co udaje bazę danych, ale
+działa w pamięci. `ConcurrentHashMap` pod spodem repozytorium to najprostszy sposób.
 
 ```java
 public class InMemoryUserRepository implements UserRepository {
     private final Map<Long, User> db = new ConcurrentHashMap<>();
-    private final AtomicLong sequence = new AtomicLong(1);
 
     @Override
     public User save(User user) {
-        if (user.getId() == null) {
-            // Symulujemy generowanie ID przez bazę
-            user.setId(sequence.getAndIncrement());
-        }
         db.put(user.getId(), user);
         return user;
     }
@@ -122,49 +107,123 @@ public class InMemoryUserRepository implements UserRepository {
 }
 ```
 
-**Test, który faktycznie sprawdza zachowanie:**
-Teraz nasz test nie potrzebuje żadnych verify ani ArgumentCaptor. Po prostu wywołujemy akcję i sprawdzamy efekt końcowy.
+Tak mógłby wyglądać wtedy test oparty na stanie `State-based`.
+Teraz nasz test nie potrzebuje żadnych `verify`. Po prostu wywołujemy akcję i sprawdzamy, czy stan w "bazie" się zgadza.
 
 ```java
 class UserServiceTest {
-
     private final InMemoryUserRepository userRepository = new InMemoryUserRepository();
     private final UserService userService = new UserService(userRepository);
 
     @BeforeEach
-    void setUp() {
+    void setup() {
         userRepository.clear();
     }
 
     @Test
-    void shouldRegisterUserWithDefaultRole() {
+    void shouldUpdateUserName() {
         // given
-        var user = new User("Jan");
+        userRepository.save(new User(1L, "Jan"));
 
         // when
-        userService.register(user);
+        userService.updateName(1L, "Jan Kowalski");
 
         // then
-        var savedUser = userRepository.findById(user.getId()).orElseThrow();
-        assertThat(savedUser.getRole()).isEqualTo(Role.USER);
+        var updatedUser = userRepository.findById(1L).orElseThrow();
+        assertThat(updatedUser.getName()).isEqualTo("Jan Kowalski");
     }
 }
 ```
 
-**Czy to nadal White Box?**
+#### A co z DSL?
 
-Ktoś mógłby zapytać: "Zaraz, ale w asercji nadal wywołuję repozytorium (findById), więc mój test wie o tym, co serwis ma
-w środku. Czy to nie jest znowu White Box?".
+Pamiętasz pierwszą część? Możemy użyć tamtych wzorców, aby przygotować stan początkowy jeszcze czyściej. Zamiast ręcznie
+wywoływać userRepository.save() w sekcji given, użyjemy naszej "zdolności" (Ability).
 
-Nie. Różnica jest fundamentalna i sprowadza się do dwóch pojęć: `State-based testing` (testowanie stanu) oraz
-`Interaction-based testing` (testowanie interakcji).
+🙂 Uśmiechnięty kodzik:
 
-- W Mockito (Interakcja): Pytasz: "Drogi serwisie, czy zawołałeś metodę save dokładnie raz z takimi parametrami?". Jeśli
-  programista zmieni save() na saveAll(), Twój test wybuchnie, mimo że system działa poprawnie.
+```java
 
-- W In-Memory (Stan): Pytasz: "Systemie, nieważne jak to zrobiłeś, po prostu powiedz mi, czy ten użytkownik u Ciebie
-  jest i czy ma nadaną rolę?".
+@Test
+void shouldUpdateUserName {
+    // given
+    thereIsAUser(anUser().withId(1L).withName("Jan").build());
 
-W podejściu `Black Box `traktujemy parę Service + InMemoryRepo jako jedną, spójną czarną skrzynkę. Nie obchodzi nas, ile
-razy serwis "gadał" z repozytorium. Obchodzi nas tylko to, czy na końcu dnia dane w systemie się zgadzają.
+    // when
+    userService.updateName(1L, "Jan Kowalski");
 
+    // then
+    var updatedUser = userRepository.findById(1L).orElseThrow();
+    assertThat(updatedUser.getName()).isEqualTo("Jan Kowalski");
+}
+```
+
+Czy to nadal White Box? Ktoś powie: "Zaraz, ale w asercji wywołujesz repozytorium!". Nie. Różnica jest fundamentalna:
+
+- W Mockito (Interakcja): Pytasz: "Czy zawołałeś metodę save?". Jeśli programista zmieni sposób zapisu, test padnie.
+- W In-Memory (Stan): Pytasz: "Systemie, nieważne jak to zrobiłeś, czy ten użytkownik ma nowe imię?".
+
+W podejściu `Black Box` traktujemy parę Service + InMemoryRepo jako jedną czarną skrzynkę. Nie obchodzi nas, ile razy
+serwis "gadał" z repozytorium. Obchodzi nas efekt końcowy.
+
+#### Jak to mogło by wyglądać ostatecznie
+
+Możesz się zastanawiać: Skąd `Ability` bierze repozytorium i czy to na pewno ta sama instancja, której używa serwis? To
+kluczowy punkt. Żeby to działało, musimy mieć jedno źródło prawdy.
+
+Najlepszym sposobem jest użycie interfejsów z domyślnymi implementacjami (default methods).
+
+```java
+public interface UserAbility {
+    UserRepository userRepository(); // Metoda "dostawca"
+
+    default void thereIsAUser(User user) {
+        userRepository().save(user);
+    }
+}
+```
+
+Stwórzmy sobie klasę bazową dla testów unitowych, aby ukryć detale technicznej implementacji naszego DSL.
+
+```java
+public abstract class BaseUnitTest implements UserAbility {
+    
+    // Jedna, wspólna instancja dla serwisu, asercji i wszystkich Ability
+    protected final InMemoryUserRepository userRepository = new InMemoryUserRepository();
+
+    @Override
+    public UserRepository userRepository() {
+        return userRepository;
+    }
+
+    @BeforeEach
+    void clearDatabase() {
+        userRepository.clear(); // Każdy test zaczyna z czystą kartą
+    }
+}
+```
+
+Dzięki temu Twoja klasa testowa po prostu dziedziczy po `BaseUnitTest` i ma już możliwość skorzystania z naszej
+implementacji `In-Memory`.Oto jak wygląda ostateczny kod Twojej klasy testowej. Zauważ, jak mało "szumu technicznego" tu
+zostało. Skupiamy się wyłącznie na zachowaniu biznesowym.
+
+```java
+class UserServiceTest extends BaseUnitTest {
+
+    // Wstrzykujemy to samo repozytorium, które siedzi w BaseUnitTest
+    private final UserService userService = new UserService(userRepository);
+
+    @Test
+    void shouldUpdateUserName() {
+        // given 
+        thereIsAUser(anUser().withId(1L).withName("Jan").build());
+
+        // when
+        userService.updateName(1L, "Jan Kowalski");
+
+        // then
+        var updatedUser = userRepository.findById(1L).orElseThrow();
+        assertThat(updatedUser.getName()).isEqualTo("Jan Kowalski");
+    }
+}
+```
