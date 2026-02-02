@@ -181,8 +181,34 @@ Najlepszym sposobem jest użycie interfejsów z domyślnymi implementacjami (def
 public interface UserAbility {
     UserRepository userRepository(); // Metoda "dostawca"
 
-    default void thereIsAUser(User user) {
+    default void thereIsAUser(UserBuilder user) {
         userRepository().save(user);
+    }
+}
+
+// builder w innym pakiece np. com.ourdomain.testing.dsl.builders
+
+public class UserBuilder {
+    private Long id = 1L; // Domyślne ID
+    private String name = "Jan"; // Domyślne imię
+    // ... inne pola
+
+    public static UserBuilder anUser() {
+        return new UserBuilder();
+    }
+
+    public UserBuilder withId(Long id) {
+        this.id = id;
+        return this;
+    }
+
+    public UserBuilder withName(String name) {
+        this.name = name;
+        return this;
+    }
+
+    public User build() {
+        return new User(id, name);
     }
 }
 ```
@@ -220,7 +246,7 @@ class UserServiceTest extends BaseUnitTest {
     @Test
     void shouldUpdateUserName() {
         // given 
-        thereIsAUser(anUser().withId(1L).withName("Jan").build());
+        thereIsAUser(anUser().withId(1L).withName("Jan"));
 
         // when
         userService.updateName(1L, "Jan Kowalski");
